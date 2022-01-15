@@ -6,6 +6,16 @@ from django.db import models
     The following class ... TODO
 '''
 class Item(models.Model):
+
+    class DimensionUnit(models.TextChoices):
+        M = 'm', 'Meters'
+        FT = 'ft', 'Feet'
+
+    class WeightUnit(models.TextChoices):
+        KG = 'kg', 'Kilogram'
+        LB = 'lb', 'Pound'
+        OZ = 'oz', 'Ounces'
+
     sku = models.CharField(max_length=16)
     company = models.ForeignKey('Company', on_delete=models.PROTECT)
 
@@ -21,7 +31,7 @@ class Item(models.Model):
     weight_unit = models.CharField(
         max_length=2,
         choices=WeightUnit.choices,
-        default=WeightUnit.KILO
+        default=WeightUnit.KG
     )
 
     # Fields to keep track of dimensions - important for shipment logic
@@ -31,17 +41,11 @@ class Item(models.Model):
 
     dimension_unit = models.CharField(
         max_length=2,
+        choices=DimensionUnit.choices,
+        default=DimensionUnit.M
     )
 
 
-    class DimensionUnit(models.TextChoices):
-        M = 'm', 'Meters'
-        FT = 'ft', 'Feet'
-
-    class WeightUnit(models.TextChoices):
-        KG = 'kg', 'Kilogram'
-        LB = 'lb', 'Pound'
-        OZ = 'oz', 'Ounces'
 
 
 
