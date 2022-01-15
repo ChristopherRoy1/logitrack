@@ -9,6 +9,14 @@ class Item(models.Model):
     sku = models.CharField(max_length=16)
     company = models.ForeignKey('Company', on_delete=models.PROTECT)
 
+    product_name = models.CharField(max_length=200)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_last_modified = models.DateTimeField(auto_now=True)
+
+    is_shippable = models.BooleanField(default=False)
+
+    # Fields to keep track of weight
     weight_value = models.FloatField()
     weight_unit = models.CharField(
         max_length=2,
@@ -42,7 +50,6 @@ class Item(models.Model):
 '''
 class Company(models.Model):
     name = models.CharField(max_length=200)
-    legal_name = models.CharField(max_length=200)
     pass
 
 
@@ -50,7 +57,11 @@ class Company(models.Model):
     The following class ... TODO
 '''
 class ItemInventory(models.Model):
-    pass
+    item = models.ForeignKey('Item', on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+
+
+
 
 '''
     The following class ... TODO
