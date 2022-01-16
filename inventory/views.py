@@ -16,6 +16,7 @@ def landing_page(request):
 TODO: convert this to a ListView
 '''
 def view_all_items(request):
+    """TODO: populate docstring """
     items = Item.objects.all()
 
     context = {
@@ -26,19 +27,24 @@ def view_all_items(request):
     return render(request, 'inventory/items-list.html', context=context)
 
 
-'''
-    The following class TODO
-'''
+
 class ItemCreateView(CreateView):
+    """
+        TODO: add docstring
+    """
     template_name = 'inventory/items/item_create.html'
     form_class = ItemCreateForm
     model = Item
 
     def form_valid(self, form):
         print(form.fields)
-        # View-specific form validation goes here
+
+        # starting_quantity is a field added to the form that is
+        # not part of the Item Model -> we will use it to
+        # initialize an associated ItemInventory model instead
         starting_quantity = form.data['starting_inventory']
-        # We want to proceed with saving the item
+
+
         response = super().form_valid(form)
 
         # Initialize this item's inventory to 0
@@ -51,23 +57,26 @@ class ItemCreateView(CreateView):
 
 
 
-
-
-
-'''
-    The following class TODO
-'''
 class ItemDetailView(DetailView):
+    """
+        The following class is used to display information about a single item.
+
+        The item being requested is passed as a kwarg, which is used in the
+        overriden get_object function to retrieve the associated item
+        from the database.
+    """
+
     template_name = 'inventory/items/item_detail.html'
+
     def get_object(self):
         item_id = self.kwargs.get("id")
         return get_object_or_404(Item, id=item_id)
 
 
-'''
-    The following class TODO
-'''
 class ItemUpdateView(UpdateView):
+    """
+        TODO: add docstring
+    """
     template_name = 'inventory/items/item_update.html'
     form_class = ItemCreateForm
     model = Item
@@ -77,10 +86,10 @@ class ItemUpdateView(UpdateView):
         return get_object_or_404(Item, id=item_id)
 
 
-'''
-    The following class TODO
-'''
 class ItemDeleteView(DeleteView):
+    """
+        TODO: add docstring
+    """
     template_name = 'inventory/items/item_delete.html'
 
     def get_object(self):
@@ -89,6 +98,9 @@ class ItemDeleteView(DeleteView):
 
 
 class ShipmentListView(ListView):
+    """
+        TODO: add docstring
+    """
     model = Shipment
     template_name = 'inventory/shipments/shipment_list.html'
 
@@ -98,6 +110,9 @@ class ShipmentListView(ListView):
         return Shipment.objects.filter(company=self.company)
 
 class ShipmentCreateView(CreateView):
+    """
+        TODO: add docstring
+    """
     template_name = 'inventory/shipments/create_shipment.html'
     form_class = ShipmentCreateForm
 
@@ -112,6 +127,9 @@ class ShipmentCreateView(CreateView):
         return is_valid
 
 class ShipmentEditItemView(SingleObjectMixin, FormView):
+    """
+        TODO: add docstring
+    """
     template_name = 'inventory/shipments/add_items_to_shipment.html'
     model = Shipment
 
