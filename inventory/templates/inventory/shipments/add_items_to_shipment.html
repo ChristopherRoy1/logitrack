@@ -1,0 +1,23 @@
+{% extends 'inventory/base_structure.html' %}
+
+{% block content %}
+<h1>Editing shipment ID {{shipment.id}}</h1>
+
+<form class="" action="." method="POST" enctype="multipart/form-data"> {% csrf_token %}
+  <h2>Shipment items</h2>
+  {% for shipment_item_form in form.forms %}
+    <h4>
+      {% if shipment_item_form.instance.id %}
+        Item: {{ shipment_item_form.instance.item }}
+      {% else %}
+        {% if form.forms|length > 1 %}
+          Add another item!
+        {% else %}
+          Add an item!
+        {% endif %}
+      {% endif %}
+    </h4>
+    {{shipment_item_form.as_table}}
+{% endfor %}
+</form>
+{% endblock content %}

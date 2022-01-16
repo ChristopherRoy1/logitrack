@@ -10,6 +10,7 @@
       <th>Date Shipping</th>
       <th>Direction</th>
       <th>To Address</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -19,6 +20,7 @@
         <td>{{ shipment.date_shipping }}</td>
         <td>{{ shipment.direction }}</td>
         <td>{{ shipment.to_address }}</td>
+        <td><a href="{% url 'edit-shipment' company=shipment.company.id shipmentid=shipment.id %}">View & Edit Shipment</a></td>
     </tr>
     {% endfor %}
   </tbody>

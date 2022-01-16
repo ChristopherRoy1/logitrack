@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
-from .models import Company, Item, ItemInventory, Shipment
+from .models import Company, Item, ItemInventory, Shipment, ShipmentItem
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView, FormView
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib import messages #TODO: add message handling to template
                                     #      & create messages to display in views
 from django.urls import reverse
-from .forms import ItemCreateForm, ShipmentCreateForm, ShipmentItemFormset
+from .forms import ItemCreateForm, ShipmentCreateForm, ShipmentItemFormset, CompanyCreateForm
 
 # Create your views here.
 def landing_page(request):
@@ -26,7 +26,10 @@ def view_all_items(request):
 
     return render(request, 'inventory/items-list.html', context=context)
 
+'''
+    Item Views
 
+'''
 
 class ItemCreateView(CreateView):
     """
@@ -96,6 +99,41 @@ class ItemDeleteView(DeleteView):
         item_id = self.kwargs.get("id")
         return get_object_or_404(Item, id=item_id)
 
+'''
+    Company Views
+
+'''
+
+
+class CompanyCreateView(CreateView):
+    model = Company
+    template_name='inventory/companies/company_create.html'
+    form_class=CompanyCreateForm
+
+    def get_success_url(self):
+        return reverse('view-all-companies')
+
+class CompanyDetailView(DetailView):
+    """
+        The following class is used to display information about a single company.
+
+    """
+
+    template_name = 'inventory/companies/company_detail.html'
+
+    def get_object(self):
+        company_id = self.kwargs.get("company")
+        return get_object_or_404(Company, id=company_id)
+
+class CompanyListView(ListView):
+    model = Company
+    template_name='inventory/companies/company_list.html'
+
+
+'''
+    Shipment Views
+
+'''
 
 class ShipmentListView(ListView):
     """
@@ -126,6 +164,8 @@ class ShipmentCreateView(CreateView):
         is_valid = super().form_valid(form)
         return is_valid
 
+
+
 class ShipmentEditItemView(SingleObjectMixin, FormView):
     """
         TODO: add docstring
@@ -133,19 +173,21 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
     template_name = 'inventory/shipments/add_items_to_shipment.html'
     model = Shipment
 
+    def get_object(self):
+        shipment_id = self.kwargs.get("shipmentid")
+        return get_object_or_404(Shipment, id=shipment_id)
+
     def get(self, request, *args, **kwargs):
         #TODO: get & pass inventory data so the maximum a shipment can take is
         # displayed on the form
-        self.object = self.get_object(
-            queryset=Shipment.objects.all()
-        )
-        return super.get(request, *args, **kwargs)
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object(
             queryset=Shipment.objects.all()
         )
-        return super.post(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
         current_shipment = self.object

@@ -1,9 +1,8 @@
 <nav style="margin-bottom: 50px;">
   <a href="{% url 'landing_page' %}">Home</a>
+  <a href="{% url 'create-company' %}">Add a company</a>
   <a href="{% url 'view_all_items' %}">View All Items</a>
   <a href="{% url 'create_item' %}">Create an Item</a>
-  <a href="#">Edit an Existing Item</a>
-  <a href="#">Delete an item</a>
-  <a href="#">Ship an item</a>
+  <a href="{% url 'view-all-companies' %}">View Companies</a>
   <a href="#">View Shipments</a>
 </nav>

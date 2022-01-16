@@ -13,6 +13,14 @@ class ItemCreateForm(forms.ModelForm):
             'dimension_z_value', 'dimension_unit'
         ]
 
+class CompanyCreateForm(forms.ModelForm):
+
+    class Meta:
+        model = Company
+        fields = [
+            'name'
+        ]
+
 
 class ShipmentCreateForm(forms.ModelForm):
     class Meta:
