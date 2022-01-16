@@ -46,7 +46,9 @@ class Item(models.Model):
     )
 
 
-
+    def __str__(self):
+        fields_to_display = (self.company.name, self.sku, self.product_name)
+        return '|'.join(fields_to_display)
 
 
 '''
@@ -54,7 +56,9 @@ class Item(models.Model):
 '''
 class Company(models.Model):
     name = models.CharField(max_length=200)
-    pass
+
+    def __str__(self):
+        return self.name
 
 
 '''
@@ -63,7 +67,6 @@ class Company(models.Model):
 class ItemInventory(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE)
     quantity = models.IntegerField()
-
 
 
 

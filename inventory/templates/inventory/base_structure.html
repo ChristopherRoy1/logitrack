@@ -1,0 +1,14 @@
+<!DOCTYPE html="en">
+<html lang="en" dir="ltr">
+  <head>
+    {% block header %}
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock title %} </title>
+    {% endblock header %}
+  </head>
+  <body>
+      {% include "inventory/templates/navbar.html"}
+      {% block content %}
+      {% endblock content %}
+  </body>
+</html>
