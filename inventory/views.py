@@ -9,4 +9,4 @@ def landing_page(request):
         'items': items
     }
 
-    return render(request, 'home.html', context=context)
+    return render(request, 'inventory/home.html', context=context)
