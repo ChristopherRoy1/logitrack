@@ -5,23 +5,27 @@
   <table>
     <thead>
       <tr>
+        <th>Link</th>
         <th>ID</th>
         <th>Product Name</th>
         <th>SKU</th>
         <th>Company</th>
         <th>Date Created</th>
         <th>Date Last Modified</th>
+        <th>Delete Item</th>
       </tr>
     </thead>
     <tbody>
       {% for item in items %}
       <tr>
+        <td><a href='{{ item.get_absolute_url }}''>View</a>|<a href='{{ item.get_absolute_edit_url }}'>Edit</a></td>
         <td>{{ item.id }}</td>
         <td>{{ item.product_name }}</td>
         <td>{{ item.sku }}</td>
         <td>{{ item.company.name }}</td>
         <td>{{ item.date_created }}</td>
         <td>{{ item.date_last_modified }}</td>
+        <td><a href="{{ item.get_absolute_delete_url }}">Delete</a></td>
       </tr>
       {% endfor %}
     </tbody>

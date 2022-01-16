@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.urls import reverse
 # Create your models here.
 
 '''
@@ -45,6 +45,17 @@ class Item(models.Model):
         default=DimensionUnit.M
     )
 
+    def get_absolute_url(self):
+        view_name = 'view-item'
+        return reverse(view_name, args=[self.id])
+
+    def get_absolute_edit_url(self):
+        view_name = 'edit-item'
+        return reverse(view_name, args=[self.id])
+
+    def get_absolute_delete_url(self):
+        view_name = 'delete-item'
+        return reverse(view_name, args=[self.id])
 
     def __str__(self):
         fields_to_display = (self.company.name, self.sku, self.product_name)

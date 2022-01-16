@@ -1,0 +1,26 @@
+{% extends 'inventory/base_structure.html' %}
+
+{% block content %}
+<div class="">
+  <dl class="">
+    <dt>ID</dt>
+    <dd>{{ item.id }}</dd>
+    <dt>Product Name</dt>
+    <dd>{{ item.product_name }}</dd>
+    <dt> SKU</dt>
+    <dd>{{ item.sku }}</dd>
+    <dt>Product Name</dt>
+    <dd>{{ item.product_name }}</dd>
+    <dt>Product Name</dt>
+    <dd>{{ item.product_name }}</dd>
+  </dl>
+
+  <dl class="">
+    <dt>Weight</dt>
+    <dd>{{ item.weight_value }} ({{ item.weight_unit }})</dd>
+    <dt>Dimension</dt>
+    <dd>{{ item.dimension_x_value }} x {{ item.dimension_y_value }} x {{ item.dimension_z_value }} ({{item.dimension_unit}})</dd>
+  </dl>
+</div>
+
+{% endblock content %}
