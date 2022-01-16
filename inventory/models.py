@@ -77,7 +77,7 @@ class Company(models.Model):
 '''
 class ItemInventory(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=0)
 
 
 
@@ -85,13 +85,29 @@ class ItemInventory(models.Model):
     The following class ... TODO
 '''
 class Shipment(models.Model):
-    pass
+    class ShipmentDirection(models.TextChoices):
+        IN = 'IN', "Inbound"
+        OUT = 'OUT', "Outbound"
 
-'''
-    The following class ... TODO
-'''
+    company = models.ForeignKey('Company', on_delete=models.PROTECT)
+    to_address = models.CharField(max_length=256)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_shipping = models.DateTimeField()
+
+    direction = models.CharField(
+        max_length=3,
+        choices=ShipmentDirection.choices,
+        default=ShipmentDirection.OUT
+    )
+
+
+
+
 class ShipmentItem(models.Model):
-    pass
+    shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE)
+    item = models.ForeignKey('Item', on_delete=models.CASCADE)
+    quantity = models.IntegerField()
 
 
 '''

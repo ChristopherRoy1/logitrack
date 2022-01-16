@@ -1,0 +1,28 @@
+{% extends 'inventory/base_structure.html' %}
+
+{% block content %}
+<h2>Shipments for company</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date Created</th>
+      <th>Date Shipping</th>
+      <th>Direction</th>
+      <th>To Address</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for shipment in object_list %}
+    <tr>
+        <td>{{ shipment.date_created }}</td>
+        <td>{{ shipment.date_shipping }}</td>
+        <td>{{ shipment.direction }}</td>
+        <td>{{ shipment.to_address }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+{% endblock content %}
