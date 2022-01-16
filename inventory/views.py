@@ -6,7 +6,8 @@ def landing_page(request):
     items = Item.objects.all()
 
     context = {
-        'items': items
+        'items': items,
+        'itemCount': items.count()
     }
 
     return render(request, 'inventory/home.html', context=context)
