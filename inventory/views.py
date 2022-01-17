@@ -173,30 +173,32 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
     template_name = 'inventory/shipments/add_items_to_shipment.html'
     model = Shipment
 
-    def get_object(self):
-        shipment_id = self.kwargs.get("shipmentid")
-        return get_object_or_404(Shipment, id=shipment_id)
+    pk_url_kwarg='shipmentid'
+    #def get_object(self):
+    #    shipment_id = self.kwargs.get("shipmentid")
+    #    return get_object_or_404(Shipment, id=shipment_id)
 
     def get(self, request, *args, **kwargs):
         #TODO: get & pass inventory data so the maximum a shipment can take is
-        # displayed on the form
-        self.object = self.get_object()
+        # displayed on the form'
+        self.object = self.get_object(queryset=Shipment.objects.all())
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object(
-            queryset=Shipment.objects.all()
-        )
+        print('post detected')
+        self.object = self.get_object(queryset=Shipment.objects.all())
+        print(self.get_form())
         return super().post(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
-        current_shipment = self.object
-        return ShipmentItemFormset(**self.get_form_kwargs(), instance=current_shipment)
+        return ShipmentItemFormset(**self.get_form_kwargs(), instance=self.object)
 
     def form_valid(self, form):
+        print(form.instance)
         form.save()
-
-        return HttpResponseRedirect(self.get_success_url())
+        
+        return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('view_all_items')
+        print('getting_success_url')
+        return '/'

@@ -3,12 +3,20 @@
 {% block content %}
 <h1>Editing shipment ID {{shipment.id}}</h1>
 
-<form class="" action="." method="POST" enctype="multipart/form-data"> {% csrf_token %}
+<form action="" method="POST" enctype="multipart/form-data">
+{% for hidden_field in form.hidden_fields %}
+  {{ hidden_field.errors}}
+  {{ hidden_field}}
+{% endfor %}
+{% csrf_token %}
+  {{form.management_form}}
+  {{form.non_form_errors}}
   <h2>Shipment items</h2>
   {% for shipment_item_form in form.forms %}
+    <hr>
     <h4>
       {% if shipment_item_form.instance.id %}
-        Item: {{ shipment_item_form.instance.item }}
+        Item: {{ shipment_item_form.instance.item.id }}
       {% else %}
         {% if form.forms|length > 1 %}
           Add another item!
@@ -17,7 +25,14 @@
         {% endif %}
       {% endif %}
     </h4>
-    {{shipment_item_form.as_table}}
+    {% for hidden_field in shipment_item_form.hidden_fields %}
+      {{hidden_field.errors}}
+    {% endfor %}
+    <table>
+      {{shipment_item_form.as_table}}
+    </table>
 {% endfor %}
+<hr>
+<button type="submit" value="Save & Update Shipment">Save & Update Shipment</button>
 </form>
 {% endblock content %}

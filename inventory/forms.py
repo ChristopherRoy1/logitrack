@@ -22,6 +22,7 @@ class CompanyCreateForm(forms.ModelForm):
         ]
 
 
+
 class ShipmentCreateForm(forms.ModelForm):
     class Meta:
         model = Shipment
@@ -30,4 +31,4 @@ class ShipmentCreateForm(forms.ModelForm):
         ]
 
 
-ShipmentItemFormset = inlineformset_factory(Shipment, ShipmentItem, fields=('item', 'quantity'), extra=10)
+ShipmentItemFormset = inlineformset_factory(Shipment, ShipmentItem, fields=('item', 'quantity'))

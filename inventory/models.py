@@ -106,7 +106,7 @@ class Shipment(models.Model):
 
 class ShipmentItem(models.Model):
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE)
-    item = models.ForeignKey('Item', on_delete=models.CASCADE)
+    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='shipmentitem_item')
     quantity = models.IntegerField()
 
 
