@@ -9,7 +9,7 @@
     <tr>
       <th>Status</th>
       <th>Date Created</th>
-      <th>Date Shipping</th>
+      <th>Ship/Receive Date</th>
       <th>Direction</th>
       <th>To Address</th>
       <th>Actions</th>
@@ -18,12 +18,12 @@
   <tbody>
     {% for shipment in object_list %}
     <tr>
-        <td> {{shipment.get_status}}      </td>
+        <td> {{shipment.get_status}}  </td>
         <td>{{ shipment.date_created }}</td>
-        <td>{{ shipment.date_shipping }}</td>
+        <td>{{ shipment.date_shipped }}</td>
         <td>{{ shipment.direction }}</td>
         <td>{{ shipment.to_address }}</td>
-        <td><a href="{% url 'edit-shipment' company=shipment.company.id shipmentid=shipment.id %}">View & Edit Shipment</a></td>
+        <td>{% if shipment.date_shipped %}---------{% else %}<a href="{% url 'edit-shipment' company=shipment.company.id shipmentid=shipment.id %}">View & Edit Shipment</a>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>
