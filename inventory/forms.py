@@ -4,14 +4,13 @@ from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
 
 class ItemCreateForm(forms.ModelForm):
-    starting_inventory = forms.IntegerField(initial=0)
 
     class Meta:
         model = Item
         fields = [
             'sku', 'company', 'product_name', 'is_shippable', 'weight_value',
             'weight_unit', 'dimension_x_value', 'dimension_y_value',
-            'dimension_z_value', 'dimension_unit'
+            'dimension_z_value', 'dimension_unit', 'quantity_available'
         ]
 
 class CompanyCreateForm(forms.ModelForm):
@@ -23,9 +22,18 @@ class CompanyCreateForm(forms.ModelForm):
         ]
 
 
+
+class ShipmentShipForm(forms.ModelForm):
+    class Meta:
+        model = Shipment
+        fields = [
+            'is_shipped', 'date_shipped'
+        ]
+
+
+
 class ShipmentCreateForm(forms.ModelForm):
     unique_fields = {'item'}
-
     class Meta:
         model = Shipment
         fields = [
@@ -51,6 +59,7 @@ class ShipmentItemCreateFormSet(BaseInlineFormSet):
     def save(self, commit=True, *args, **kwargs):
         print('save item create formset')
         print(dir(self))
+        super(ShipmentItemCreateFormSet, self).save(*args, **kwargs)
 
 
 

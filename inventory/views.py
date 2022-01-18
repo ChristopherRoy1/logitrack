@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
-from .models import Company, Item, ItemInventory, Shipment, ShipmentItem
+from .models import Company, Item, Shipment, ShipmentItem
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView, FormView
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib import messages #TODO: add message handling to template
                                     #      & create messages to display in views
 from django.urls import reverse
-from .forms import ItemCreateForm, ShipmentCreateForm, ShipmentItemFormset, CompanyCreateForm
+from .forms import ItemCreateForm, ShipmentCreateForm, ShipmentShipForm, ShipmentItemFormset, CompanyCreateForm
 
 # Create your views here.
 def landing_page(request):
@@ -26,6 +26,7 @@ def view_all_items(request):
 
     return render(request, 'inventory/items-list.html', context=context)
 
+
 '''
     Item Views
 
@@ -40,23 +41,7 @@ class ItemCreateView(CreateView):
     model = Item
 
     def form_valid(self, form):
-        print(form.fields)
-
-        # starting_quantity is a field added to the form that is
-        # not part of the Item Model -> we will use it to
-        # initialize an associated ItemInventory model instead
-        starting_quantity = form.data['starting_inventory']
-
-
-        response = super().form_valid(form)
-
-        # Initialize this item's inventory to 0
-        inventory = ItemInventory.objects.create(
-            item=form.instance,
-            quantity=starting_quantity
-        )
-
-        return response
+        return super().form_valid(form)
 
 
 
@@ -157,22 +142,68 @@ class ShipmentListView(ListView):
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
         return Shipment.objects.filter(company=self.company)
 
+
 class ShipmentCreateView(CreateView):
     """
         TODO: add docstring
     """
     template_name = 'inventory/shipments/create_shipment.html'
     form_class = ShipmentCreateForm
+    model = Shipment
 
     def get_success_url(self):
         return reverse('view-all-shipments', kwargs={'company': self.company.id})
 
     def form_valid(self, form):
+        # The shipment is created from a URL that already has the company
+        # selected - we need to add the company to the form (which is a required
+        # field) so that it's considered to be a valid form
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
-        shipment = form.save(commit=False)
-        form.instance.company= self.company
+        instance = form.save(commit=False)
+        instance.company= self.company
         is_valid = super().form_valid(form)
         return is_valid
+
+
+class ShipmentShipView(UpdateView):
+    template_name = 'inventory/shipments/shipment_receive.html'
+    form_class = ShipmentShipForm
+    model = Shipment
+
+    def form_valid(self, form):
+        shipment = form.save(commit=False)
+
+        is_valid = super().form_valid(form)
+        return is_valid
+
+
+class ShipmentReceiveView(UpdateView):
+    template_name = 'inventory/shipments/shipment_receive.html'
+    form_class = ShipmentShipForm
+    model = Shipment
+    pk_url_kwarg='shipmentid'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ShipmentReceiveView, self).get_context_data(*args, **kwargs)
+
+        # Display existing shipments to the user, to provide feedback
+        # in the event that they try to change the 'is_shippable' property
+        # to false when there are pending shipments
+        shipmentid = self.kwargs.get("shipmentid")
+        shipmentItems = ShipmentItem.objects.filter(shipment=shipmentid)
+        context['shipmentItems'] = shipmentItems
+        return context
+
+    def form_valid(self, form):
+        self.company = get_object_or_404(Company, id=self.kwargs['company'])
+        shipment = form.save(commit=False)
+        #update things
+
+        is_valid = super().form_valid(form)
+        return is_valid
+
+    def get_success_url(self):
+        return reverse('view-all-shipments', kwargs={'company': self.company.id})
 
 
 
@@ -183,10 +214,9 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
     template_name = 'inventory/shipments/add_items_to_shipment.html'
     model = Shipment
 
+
     pk_url_kwarg='shipmentid'
-    #def get_object(self):
-    #    shipment_id = self.kwargs.get("shipmentid")
-    #    return get_object_or_404(Shipment, id=shipment_id)
+
 
     def get_context_data(self, **kwargs):
         """ This function is used to display inventory levels on the form """
@@ -194,7 +224,7 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
         context = super().get_context_data(**kwargs)
         company_id = context['object'].company
 
-        context['inventory_levels'] = ItemInventory.objects.filter(item__company=company_id)
+        context['items'] = Item.objects.filter(company=company_id)
 
         return context
 
@@ -211,11 +241,10 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
         return ShipmentItemFormset(**self.get_form_kwargs(), instance=self.object)
 
     def form_valid(self, form):
-        print('form_valid')
-        print(form.forms)
+        #print('form_valid')
         form.save()
 
-        return super().form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return '/'

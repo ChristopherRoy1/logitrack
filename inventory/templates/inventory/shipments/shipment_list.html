@@ -2,10 +2,12 @@
 
 {% block content %}
 <h2>Shipments for company</h2>
+<a href="{% url 'create-shipment' company=view.kwargs.company %}">Create New Shipment</a>
 
 <table>
   <thead>
     <tr>
+      <th>Status</th>
       <th>Date Created</th>
       <th>Date Shipping</th>
       <th>Direction</th>
@@ -16,6 +18,7 @@
   <tbody>
     {% for shipment in object_list %}
     <tr>
+        <td> {{shipment.get_status}}      </td>
         <td>{{ shipment.date_created }}</td>
         <td>{{ shipment.date_shipping }}</td>
         <td>{{ shipment.direction }}</td>

@@ -1,22 +1,24 @@
 {% extends 'inventory/base_structure.html' %}
 
 {% block content %}
-<h1>Editing shipment ID {{shipment.id}}</h1>
+<h1>Editing {{shipment.get_direction_display}} shipment ID {{shipment.id}}</h1>
 
 <h2>Inventory Levels</h2>
 <h3>Ensure that the quantity entered for an item on a shipment is less than
 or equal to its remaining inventory!</h3>
 
-{% if inventory_levels %}
+{% if items %}
 <table>
   <thead>
-    <th>Item</th>
+    <th>SKU</th>
+    <th>Product Name</th>
     <th>Quantity</th>
   </thead>
   <tbody>
-    {% for item in inventory_levels %}
+    {% for item in items %}
     <tr>
-      <td>{{item.item}}</td>
+      <td>{{item.sku}}</td>
+      <td>{{item.product_name}}</td>
       <td>{{item.quantity}}</td>
     </tr>
       {% endfor %}

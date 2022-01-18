@@ -1,7 +1,16 @@
 {% extends 'inventory/base_structure.html' %}
 
 {% block content %}
-<form action="." method="POST"> {% csrf_token %}
+
+
+
+<form action="." method="POST">
+  {% for hidden_field in form.hidden_fields %}
+    {{ hidden_field.errors}}
+    {{ hidden_field}}
+  {% endfor %}
+  {% csrf_token %}
+
   {{form.as_p}}
   <input type="submit" value="Save & Create Shipment">
 </form>

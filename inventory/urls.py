@@ -18,4 +18,6 @@ urlpatterns = [
     path('company/<int:company>/shipments/', views.ShipmentListView.as_view(), name="view-all-shipments"),
     path('company/<int:company>/shipments/create/', views.ShipmentCreateView.as_view(), name="create-shipment"),
     path('company/<int:company>/shipments/<int:shipmentid>/items/', views.ShipmentEditItemView.as_view(), name="edit-shipment"),
+    path('company/<int:company>/shipments/<int:shipmentid>/ship/', views.ShipmentShipView.as_view(), name="ship-shipment"),
+    path('company/<int:company>/shipments/<int:shipmentid>/receive/', views.ShipmentReceiveView.as_view(), name="receive-shipment"),
 ]
