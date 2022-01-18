@@ -7,18 +7,21 @@
 </form>
 
 {% for shipment in shipments %}
-
   {% if shipment.shipmentitem_set %}
   <table>
       <thead>
         <tr>
-          <th>To Address</th>
+          <th>Item</th>
+          <th>Quantity</th>
         </tr>
       </thead>
       <tbody>
+        {% for shipment_item in shipment.shipmentitem_set.all %}
         <tr>
-
+          <td>{{ shipment_item.item }}</td>
+          <td>{{ shipment_item.quantity }}</td>
         </tr>
+        {% endfor %}
       </tbody>
   </table>
   {% endif %}

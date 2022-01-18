@@ -1,5 +1,10 @@
 from django.db import models
 from django.urls import reverse
+from django.core.exceptions import ValidationError
+from django.db.models import Sum
+
+import datetime
+
 # Create your models here.
 
 '''
@@ -72,14 +77,20 @@ class Company(models.Model):
         return self.name
 
 
-'''
-    The following class ... TODO
-'''
+
 class ItemInventory(models.Model):
-    item = models.ForeignKey('Item', on_delete=models.CASCADE)
+    '''
+        The following model represents the inventory level of a related item.
+        While the application does not support multiple locations, the
+        inventory functionality was seperated from the Item model to simplify
+        future development in the event that support for locations is added
+    '''
+
+    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name="item_iteminventory")
     quantity = models.IntegerField(default=0)
 
-
+    def __str__(self):
+        return self.item.product_name + ': ' + str(self.quantity)
 
 '''
     The following class ... TODO
@@ -96,7 +107,7 @@ class Shipment(models.Model):
     date_promised = models.DateTimeField()
 
     is_shipped = models.BooleanField(default=False)
-    date_shipped = models.DateTimeField()
+    date_shipped = models.DateTimeField(null=True)
 
     direction = models.CharField(
         max_length=3,
@@ -104,13 +115,44 @@ class Shipment(models.Model):
         default=ShipmentDirection.OUT
     )
 
+    def clean(self, *args, **kwargs):
+        super().clean()
+        # In the event that the shipment is flagged as shipped
+        # and no date_shipped value is provided, default the date_shipped to be
+        # the current time
+        if self.is_shipped and date_shipped is None:
+            date_shipped = datetime.now
 
 
 
 class ShipmentItem(models.Model):
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='shipmentitem_item')
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
+
+    def clean(self):
+        if self.quantity < 0:
+            raise ValidationError(
+                'A shipment quantity must be non-negative',
+                code='negative_qty'
+            )
+
+        item_inventory_quantity = ItemInventory.objects.filter(item=self.item).aggregate(Sum('quantity'))['quantity__sum']
+
+        if item_inventory_quantity is None:
+            raise ValidationError(
+                "An unexpected error occured. The item was not added to the shipment",
+                code="missing_inventory_record"
+            )
+
+        if self.quantity > item_inventory_quantity:
+            raise ValidationError(
+                "A shipment item cannot be greater than an item's inventory. Inventory Qty: %(qty_inv)s - Entered Qty: %(ship_qty)s",
+                params={'qty_inv': item_inventory_quantity, 'ship_qty': self.quantity},
+                code="invalid_inventory_quantity"
+            )
+
+
 
 
 '''

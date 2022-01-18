@@ -95,7 +95,8 @@ class ItemUpdateView(UpdateView):
         # in the event that they try to change the 'is_shippable' property
         # to false when there are pending shipments
         item_id = self.kwargs.get("id")
-        context['shipmentItems'] = ShipmentItem.objects.filter(item=item_id)
+        item_company = Item.objects.filter(id=item_id).values('company').distinct()
+        context['shipments'] = Shipment.objects.filter(company__in=item_company)
         return context
 
 class ItemDeleteView(DeleteView):
@@ -187,32 +188,34 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
     #    shipment_id = self.kwargs.get("shipmentid")
     #    return get_object_or_404(Shipment, id=shipment_id)
 
+    def get_context_data(self, **kwargs):
+        """ This function is used to display inventory levels on the form """
+
+        context = super().get_context_data(**kwargs)
+        company_id = context['object'].company
+
+        context['inventory_levels'] = ItemInventory.objects.filter(item__company=company_id)
+
+        return context
 
     def get(self, request, *args, **kwargs):
-        #TODO: get & pass inventory data so the maximum a shipment can take is
-        # displayed on the form'
-        print(request)
-        print(self.kwargs)
         self.object = self.get_object(queryset=Shipment.objects.all())
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        #print('post detected')
         self.object = self.get_object(queryset=Shipment.objects.all())
         #print(self.get_form())
         return super().post(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
-        print('self.get_form_kwargs')
-        print(self.get_form_kwargs())
         return ShipmentItemFormset(**self.get_form_kwargs(), instance=self.object)
 
     def form_valid(self, form):
-        #print(form.instance)
+        print('form_valid')
+        print(form.forms)
         form.save()
 
         return super().form_valid(form)
 
     def get_success_url(self):
-        print('getting_success_url')
         return '/'

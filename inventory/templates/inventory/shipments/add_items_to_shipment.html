@@ -3,6 +3,27 @@
 {% block content %}
 <h1>Editing shipment ID {{shipment.id}}</h1>
 
+<h2>Inventory Levels</h2>
+<h3>Ensure that the quantity entered for an item on a shipment is less than
+or equal to its remaining inventory!</h3>
+
+{% if inventory_levels %}
+<table>
+  <thead>
+    <th>Item</th>
+    <th>Quantity</th>
+  </thead>
+  <tbody>
+    {% for item in inventory_levels %}
+    <tr>
+      <td>{{item.item}}</td>
+      <td>{{item.quantity}}</td>
+    </tr>
+      {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 <form action="" method="POST" enctype="multipart/form-data">
 {% for hidden_field in form.hidden_fields %}
   {{ hidden_field.errors}}

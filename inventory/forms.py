@@ -48,6 +48,10 @@ class ShipmentItemCreateFormSet(BaseInlineFormSet):
         for form in self.forms:
             form.fields['item'].queryset = Item.objects.filter(company=company_id, is_shippable=True)
 
+    def save(self, commit=True, *args, **kwargs):
+        print('save item create formset')
+        print(dir(self))
+
 
 
 
