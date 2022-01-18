@@ -88,6 +88,15 @@ class ItemUpdateView(UpdateView):
         item_id = self.kwargs.get("id")
         return get_object_or_404(Item, id=item_id)
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(ItemUpdateView, self).get_context_data(*args, **kwargs)
+
+        # Display existing shipments to the user, to provide feedback
+        # in the event that they try to change the 'is_shippable' property
+        # to false when there are pending shipments
+        item_id = self.kwargs.get("id")
+        context['shipmentItems'] = ShipmentItem.objects.filter(item=item_id)
+        return context
 
 class ItemDeleteView(DeleteView):
     """
@@ -178,25 +187,30 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
     #    shipment_id = self.kwargs.get("shipmentid")
     #    return get_object_or_404(Shipment, id=shipment_id)
 
+
     def get(self, request, *args, **kwargs):
         #TODO: get & pass inventory data so the maximum a shipment can take is
         # displayed on the form'
+        print(request)
+        print(self.kwargs)
         self.object = self.get_object(queryset=Shipment.objects.all())
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print('post detected')
+        #print('post detected')
         self.object = self.get_object(queryset=Shipment.objects.all())
-        print(self.get_form())
+        #print(self.get_form())
         return super().post(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
+        print('self.get_form_kwargs')
+        print(self.get_form_kwargs())
         return ShipmentItemFormset(**self.get_form_kwargs(), instance=self.object)
 
     def form_valid(self, form):
-        print(form.instance)
+        #print(form.instance)
         form.save()
-        
+
         return super().form_valid(form)
 
     def get_success_url(self):

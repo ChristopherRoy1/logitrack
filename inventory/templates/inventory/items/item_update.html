@@ -6,4 +6,24 @@
   <input type="submit" value="Save & Update Item">
 </form>
 
+{% for shipment in shipments %}
+
+  {% if shipment.shipmentitem_set %}
+  <table>
+      <thead>
+        <tr>
+          <th>To Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+
+        </tr>
+      </tbody>
+  </table>
+  {% endif %}
+
+{% endfor %}
+
+
 {% endblock content %}

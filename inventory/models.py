@@ -17,7 +17,7 @@ class Item(models.Model):
         OZ = 'oz', 'Ounces'
 
     sku = models.CharField(max_length=16)
-    company = models.ForeignKey('Company', on_delete=models.PROTECT)
+    company = models.ForeignKey('Company', on_delete=models.PROTECT, related_name="item_company")
 
     product_name = models.CharField(max_length=200)
 
@@ -93,7 +93,10 @@ class Shipment(models.Model):
     to_address = models.CharField(max_length=256)
 
     date_created = models.DateTimeField(auto_now_add=True)
-    date_shipping = models.DateTimeField()
+    date_promised = models.DateTimeField()
+
+    is_shipped = models.BooleanField(default=False)
+    date_shipped = models.DateTimeField()
 
     direction = models.CharField(
         max_length=3,
@@ -106,7 +109,7 @@ class Shipment(models.Model):
 
 class ShipmentItem(models.Model):
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE)
-    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='shipmentitem_item')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='shipmentitem_item')
     quantity = models.IntegerField()
 
 

@@ -1,6 +1,7 @@
 from django import forms
 from .models import Item, Shipment, ShipmentItem, Company
-from django.forms.models import inlineformset_factory
+from django.forms.models import inlineformset_factory, BaseInlineFormSet
+
 
 class ItemCreateForm(forms.ModelForm):
     starting_inventory = forms.IntegerField(initial=0)
@@ -22,13 +23,34 @@ class CompanyCreateForm(forms.ModelForm):
         ]
 
 
-
 class ShipmentCreateForm(forms.ModelForm):
+    unique_fields = {'item'}
+
     class Meta:
         model = Shipment
         fields = [
-            'to_address', 'date_shipping', 'direction'
+            'to_address', 'date_promised', 'direction'
         ]
 
 
-ShipmentItemFormset = inlineformset_factory(Shipment, ShipmentItem, fields=('item', 'quantity'))
+class ShipmentItemCreateFormSet(BaseInlineFormSet):
+
+    class Meta:
+        model = ShipmentItem
+        fields= ['item', 'quantity']
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs['instance'].company.id
+        super(ShipmentItemCreateFormSet, self).__init__(*args, **kwargs)
+
+        # Update each choice field to prevent selection of an item from a
+        # different company.
+        for form in self.forms:
+            form.fields['item'].queryset = Item.objects.filter(company=company_id, is_shippable=True)
+
+
+
+
+
+
+ShipmentItemFormset = inlineformset_factory(Shipment, ShipmentItem, formset=ShipmentItemCreateFormSet, fields=('item', 'quantity'))
