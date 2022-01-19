@@ -7,11 +7,16 @@ import datetime
 
 # Create your models here.
 
-'''
-    The following class ... TODO
-'''
 class Item(models.Model):
+    '''
+        The following class model represents the items held in the logistic
+        company's warehouse.
 
+        Because the logistics company serves many different clients, each with
+        their own set of items, each instance of the Item model is associated
+        to a Company.
+
+    '''
     class DimensionUnit(models.TextChoices):
         M = 'm', 'Meters'
         FT = 'ft', 'Feet'
@@ -21,20 +26,36 @@ class Item(models.Model):
         LB = 'lb', 'Pound'
         OZ = 'oz', 'Ounces'
 
-    sku = models.CharField(max_length=16, unique=True)
-    company = models.ForeignKey('Company', on_delete=models.PROTECT, related_name="item_company")
 
+    # The identifier used to differentiate between different items. Included
+    # on the printing labels in the warehouse to help with picking for shipments
+    sku = models.CharField(max_length=16, unique=True)
+
+
+    company = models.ForeignKey (
+        'Company',
+        on_delete=models.PROTECT,
+        related_name="item_company"
+    )
+
+    # The common name of the item
     product_name = models.CharField(max_length=200)
 
+    # This field tracks the quantity available to be assigned to a shipment
     quantity_available = models.PositiveIntegerField(default=0)
 
-
+    # The date_create and date_last_modified fields are currently for display
+    # purposes, but will eventually be used for reporting & forecasting
     date_created = models.DateTimeField(auto_now_add=True)
     date_last_modified = models.DateTimeField(auto_now=True)
 
+    # This field is used to control whether this item should ever be included
+    # in an outbound shipment
     is_shippable = models.BooleanField(default=False)
 
-    # Fields to keep track of weight
+    # Fields to keep track of weight, currently used for display purposes but
+    # will eventually be used to help optimize the warehouse's shipments &
+    # cost structure
     weight_value = models.FloatField()
     weight_unit = models.CharField(
         max_length=2,
