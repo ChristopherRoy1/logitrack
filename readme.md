@@ -3,7 +3,7 @@ by Christopher Roy
 
 
 ## About
-Logitrack is an inventory management system developed for the Shopify Summer 2022 Backend Developer Intern Challenge!
+Logitrack is an inventory management system that allows a logistics company to manage their warehouse's inventory.
 
 It implements basic CRUD functionality for items, along with the ability to assign inventory to shipments.
 
@@ -51,7 +51,7 @@ https://virtualenv.pypa.io/en/latest/
 With everything installed, clone the repository to download a copy to the current working directory.
 
 ```shell
-git clone git@github.com:ChristopherRoy1/shopify-challenge-s2022.git
+git clone git@github.com:ChristopherRoy1/logitrack.git
 ```
 
 Next, create & activate a virtualenvironment. If you have virtualenvwrapper installed, you can execute the following commands to create & activate a virtual environment:
