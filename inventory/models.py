@@ -21,7 +21,7 @@ class Item(models.Model):
         LB = 'lb', 'Pound'
         OZ = 'oz', 'Ounces'
 
-    sku = models.CharField(max_length=16)
+    sku = models.CharField(max_length=16, unique=True)
     company = models.ForeignKey('Company', on_delete=models.PROTECT, related_name="item_company")
 
     product_name = models.CharField(max_length=200)
@@ -52,6 +52,23 @@ class Item(models.Model):
         choices=DimensionUnit.choices,
         default=DimensionUnit.M
     )
+
+
+
+    def can_calculate_volume(self):
+        return not (self.dimension_x_value is None or self.dimension_y_value is None or self.dimension_x_value is None)
+
+    def total_volume_unit(self):
+        if not self.can_calculate_volume():
+            return None
+        else:
+            return "%(dimension_unit)s ^ 3" % self.dimension_unit
+
+    def total_volume_value(self):
+        if not self.can_calculate_volume():
+            return None
+        else:
+            return self.dimension_x_value * self.dimension_y_value * self.dimension_z_value
 
     def quantity_inbound(self):
         query = ShipmentItem.objects.filter(item=self, shipment__is_shipped=False, shipment__direction='IN').aggregate(Sum('quantity'))
@@ -86,7 +103,7 @@ class Item(models.Model):
     The following class ... TODO
 '''
 class Company(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.name
@@ -162,6 +179,13 @@ class ShipmentItem(models.Model):
     quantity = models.PositiveIntegerField()
     is_open = models.BooleanField(default=True)
 
+
+    def valid_item_for_company(self):
+        return self.shipment.company.id == self.item.company.id
+
+    def can_add_to_shipment(self):
+        return self.shipment.direction == 'IN' or self.item.is_shippable
+
     @classmethod
     def from_db(cls, db, field_names, values):
         instance = super(ShipmentItem, cls).from_db(db, field_names, values)
@@ -174,6 +198,10 @@ class ShipmentItem(models.Model):
         return instance
 
     def save(self, *args, **kwargs):
+        # Force the model to clean before proceeding with the save (protects
+        # against invalid model instances from being added by the Django shell)
+        self.full_clean()
+
         shipment_direction = self.shipment.direction
         if self._state.adding:
             if shipment_direction == 'OUT':
@@ -213,7 +241,6 @@ class ShipmentItem(models.Model):
 
 
     def clean(self, *args, **kwargs):
-
         item_inventory_quantity = self.item.quantity_available
         shipment_direction = self.shipment.direction
 
@@ -222,6 +249,19 @@ class ShipmentItem(models.Model):
                 "An unexpected error occured. The item was not added to the shipment",
                 code="missing_inventory_record"
             )
+
+        if not self.valid_item_for_company():
+            raise ValidationError(
+                "An unexpected error occured. All items on a shipment must belong to the company",
+                code="incompatible_company"
+            )
+
+        if not self.can_add_to_shipment():
+            raise ValidationError(
+                "An unexpected error occured. The selected item is not eligible to be added to this shipment type",
+                code="item_not_shippable"
+            )
+
         if self._state.adding:
 
             if shipment_direction == "OUT" and self.quantity > item_inventory_quantity:
@@ -243,7 +283,7 @@ class ShipmentItem(models.Model):
 
             if shipment_direction == 'OUT' and cur_qty > avail_qty + old_qty:
                 raise ValidationError(
-                    "Modifying this line would create negative inventory. Inventory Qty: %(qty_inv)s - Old Qty: %(old_qty)s - New Qty: %(new_qty)",
+                    "Modifying this line would create negative inventory. Inventory Qty: %(qty_inv)s - Old Qty: %(old_qty)s - New Qty: %(new_qty)s",
                     params={'qty_inv': avail_qty, 'old_qty': old_qty, 'new_qty': cur_qty},
                     code="invalid_inventory_quantity_edit"
                 )
@@ -252,10 +292,7 @@ class ShipmentItem(models.Model):
                 pass
 
 
-        super(ShipmentItem, self).save(*args, **kwargs)
-
-
-        super().clean(*args, **kwargs)
+        super(ShipmentItem, self).clean(*args, **kwargs)
 
         #    print(self.quantity)
         #    print(item_inventory_quantity)
