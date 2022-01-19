@@ -100,31 +100,28 @@ class ShipmentItemTestCase(TestCase):
             direction='OUT'
         )
 
+
     def test_shipment_item_company_mismatch(self):
+        """
+            This is a test to make sure that a company's shipments can only
+            contain items that are associated to them
+        """
         with self.assertRaises(ValidationError):
             ship_item = ShipmentItem.objects.create(
                 shipment = self.shipment1,
                 item=self.item2,
                 quantity=10
             )
-            
+
 
     def test_non_shippable_item_add_outbound(self):
+        """
+            This is a test to make sure that an item flagged as 'non_shippable'
+            cannot be added to an outbound shipment
+        """
         self.item1.is_shippable = False
         self.item1.save()
 
-        with self.assertRaises(ValidationError):
-            ship_item = ShipmentItem(
-                shipment = self.shipment1,
-                item=self.item1,
-                quantity=10
-            ).full_clean()
-
-
-
-    def test_non_shippable_item_shipment_type(self):
-        # This shipment item's shipment is an outbound shipment,
-        # which should raise an error as the item is flagged as non-shippable
         with self.assertRaises(ValidationError):
             ship_item = ShipmentItem.objects.create(
                 shipment = self.shipment1,
@@ -132,6 +129,13 @@ class ShipmentItemTestCase(TestCase):
                 quantity=10
             )
 
+
+
+    def test_non_shippable_item_shipment_type(self):
+        """
+            This is a test to make sure that any item for a company can be added
+            to a shipment, regardless of whether they are flagged as 'is_shippable'
+        """
         # Now, switching the shipment direction to 'IN' (inbound) should not raise any validation errors
         self.shipment1.direction = 'IN'
         self.shipment1.save()
@@ -141,3 +145,108 @@ class ShipmentItemTestCase(TestCase):
             item=self.item1,
             quantity=10
         )
+
+
+    def test_shippable_item_quantity(self):
+        """
+            This is a test to make sure that an outbound shipment cannot be
+            assigned an quantity of an item that's greater than what is currently
+            available in inventory
+        """
+
+        self.item1.is_shippable = True
+        self.item1.quantity_available = 599
+
+        with self.assertRaises(ValidationError):
+            ship_item = ShipmentItem.objects.create(
+                shipment = self.shipment1,
+                item=self.item1,
+                quantity=600
+            )
+
+class OutboundShipmentQuantityTestCase(TestCase):
+    def setUp(self):
+        self.company1 = Company.objects.create(name="The Test Company")
+
+        self.shippableItem1 = Item.objects.create(
+            sku="BLU-SHRT-LG",
+            company=self.company1,
+            product_name="Blue Shirt (Large) Duplicate",
+            quantity_available=10,
+            weight_value=10,
+            weight_unit='kg',
+            is_shippable=True,
+            dimension_x_value=1,
+            dimension_y_value=2,
+            dimension_z_value=3
+        )
+
+        self.shipment1 = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        self.shipment2 = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='IN'
+        )
+
+    def test_update_ship_item_quantity_allocated(self):
+        """
+            This is a test to validate that item inventory is properly allocated
+            when updating a shipment item on an outbound shipment.
+
+            The item in question has 10 units available in inventory.
+            We will create and then update a ShipmentItem, and validate the
+            associated Item models' available quantity.
+        """
+
+        shipment_item = ShipmentItem.objects.create(
+            shipment=self.shipment1,
+            item = self.shippableItem1,
+            quantity= 5
+        )
+
+        self.assertEquals(self.shippableItem1.quantity_allocated(), 5)
+        self.assertEquals(self.shippableItem1.quantity_available, 5)
+
+        shipment_item = ShipmentItem.objects.get(pk=shipment_item.pk)
+        shipment_item.quantity = 10
+        shipment_item.save()
+
+        # The item object is updated on save of shipment_item, so
+        # query the database again for the item to validate inventory level
+        self.shippableItem1 = Item.objects.get(pk=self.shippableItem1.pk)
+
+        self.assertEquals(self.shippableItem1.quantity_allocated(), 10)
+        self.assertEquals(self.shippableItem1.quantity_available, 0)
+
+
+    def test_delete_ship_item_inventory_allocated(self):
+        """
+            This is a test to ensure that Shipment Items that get deleted
+            have the corresponding Item instance's quantity_available replenished
+            by the deleted amount.
+        """
+
+        shipment_item = ShipmentItem.objects.create(
+            shipment=self.shipment1,
+            item = self.shippableItem1,
+            quantity= 5
+        )
+
+        self.assertEquals(self.shippableItem1.quantity_allocated(), 5)
+        self.assertEquals(self.shippableItem1.quantity_available, 5)
+
+        shipment_item.delete()
+
+        # Reload the
+        self.shippableItem1 = Item.objects.get(pk=self.shippableItem1.pk)
+        self.assertEquals(self.shippableItem1.quantity_allocated(), 0)
+        self.assertEquals(self.shippableItem1.quantity_available, 10)

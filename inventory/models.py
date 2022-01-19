@@ -174,7 +174,7 @@ class Shipment(models.Model):
 class ShipmentItem(models.Model):
     """ShipmentItems represent line items on a Shipment """
 
-    shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE)
+    shipment = models.ForeignKey('Shipment', on_delete=models.PROTECT)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='shipmentitem_item')
     quantity = models.PositiveIntegerField()
     is_open = models.BooleanField(default=True)
