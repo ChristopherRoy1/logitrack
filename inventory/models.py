@@ -63,7 +63,8 @@ class Item(models.Model):
         default=WeightUnit.KG
     )
 
-    # Fields to keep track of dimensions - important for shipment logic
+    # Fields to keep track of dimensions - important for shipment logic that
+    # will be implemented in future builds of the software
     dimension_x_value = models.FloatField()
     dimension_y_value = models.FloatField()
     dimension_z_value = models.FloatField()
@@ -77,64 +78,115 @@ class Item(models.Model):
 
 
     def can_calculate_volume(self):
+        """ A helper function to determine whether an item's volume can be calculated """
         return not (self.dimension_x_value is None or self.dimension_y_value is None or self.dimension_x_value is None)
 
     def total_volume_unit(self):
+        """ A helper function to return the units for an item's volume """
         if not self.can_calculate_volume():
             return None
         else:
             return "%(dimension_unit)s ^ 3" % self.dimension_unit
 
     def total_volume_value(self):
+        """ A helper function to calculate an item's total volume """
         if not self.can_calculate_volume():
             return None
         else:
             return self.dimension_x_value * self.dimension_y_value * self.dimension_z_value
 
     def quantity_inbound(self):
+        """
+        A helper function to calculate the total quantity of the item on all
+        inbound shipments. Used primarily to improve user experience across the
+        different views & forms within Logitrack
+        """
         query = ShipmentItem.objects.filter(item=self, shipment__is_shipped=False, shipment__direction='IN').aggregate(Sum('quantity'))
 
         result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
         return result
 
     def quantity_allocated(self):
-        #TODO: search on all item shipments
-        query = ShipmentItem.objects.filter(item=self, shipment__is_shipped=False, shipment__direction='OUT').aggregate(Sum('quantity'))
+        """
+        A helper function to calculate the total quantity of the item on
+        outbound shipments for the item. Used primarily to improve user
+        experience across the different views & forms within Logitrack
+        """
+
+        # Allocated quantity is the sum of the quantities of all of the
+        # Shipment items that have not been shipped yet
+        query = ShipmentItem.objects.filter(
+            item=self,
+            shipment__is_shipped=False,
+            shipment__direction='OUT'
+        ).aggregate(Sum('quantity'))
+
+        # Check for None before returning the result
         result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
         return result
 
     def get_absolute_url(self):
+        """
+        A helper method used by some class-based views and templates.
+        Returns the path to the Detail View for this Item instance.
+        """
         view_name = 'view-item'
         return reverse(view_name, args=[self.id])
 
     def get_absolute_edit_url(self):
+        """
+        A helper method used by some class-based views and templates.
+        Returns the path to the edit view for this Item instance.
+        """
         view_name = 'edit-item'
         return reverse(view_name, args=[self.id])
 
     def get_absolute_delete_url(self):
+        """
+        A helper method used by some class-based views and templates.
+        Returns the path to the Delete View for this Item instance.
+        """
         view_name = 'delete-item'
         return reverse(view_name, args=[self.id])
 
     def __str__(self):
+        """
+        Returns the string used for the string representation
+        of Item instances
+        """
         fields_to_display = (self.company.name, self.sku, self.product_name)
         return '|'.join(fields_to_display)
 
 
-'''
-    The following class ... TODO
-'''
+
 class Company(models.Model):
+    '''
+    The following class model represents the clients/different companies that
+    the warehouse running the Logitrack software serves.
+
+    At the time of writing, the model does not hold much information but
+    is planned to be further developed in a future build of the software.
+    '''
+    # The common name of the company
     name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
+        """ Returns the string representation of Company instances """
         return self.name
 
 
 
-'''
-    The following class ... TODO
-'''
+
 class Shipment(models.Model):
+    '''
+        The following model captures header-level information about shipments
+        to and from Logitrack's warehouse.
+
+        Shipments can contain one or many items, represented as ShipmentItems.
+
+        All shipments are associated to a single company, and all associated
+        items on the shipment will belong to that same company as well.
+    '''
     class ShipmentDirection(models.TextChoices):
         IN = 'IN', "Inbound"
         OUT = 'OUT', "Outbound"
@@ -142,12 +194,21 @@ class Shipment(models.Model):
     company = models.ForeignKey('Company', on_delete=models.PROTECT)
     to_address = models.CharField(max_length=256)
 
+
     date_created = models.DateTimeField(auto_now_add=True)
+
+    # The date on which the shipment is expected to arrive. To be used
+    # for upcoming planned Logitrack functionality.
     date_promised = models.DateTimeField()
 
+    # The is_shipped field flags Shipment instances as either received if they
+    # are inbound shipments, and 'Shipped' if they are outbound. This field also
+    # drives changes to the associated item model's inventory in the case of
+    # inbound shipments.
     is_shipped = models.BooleanField(default=False)
     date_shipped = models.DateTimeField(null=True, blank=True)
 
+    # This field tracks the type of shipment, inbound or outbound.
     direction = models.CharField(
         max_length=3,
         choices=ShipmentDirection.choices,
@@ -155,6 +216,10 @@ class Shipment(models.Model):
     )
 
     def get_status(self):
+        """
+        A helper method to display the shipment status based on the Shipment's
+        direction and is_shipped fields. Used primarily in templates.
+        """
         if self.direction == 'OUT' and self.is_shipped:
             return 'Shipped'
         elif self.direction == 'OUT' and not self.is_shipped:
@@ -169,9 +234,19 @@ class Shipment(models.Model):
 
 
     def has_open_shipment_lines(self):
+        """
+            A helper function to validate whether any related ShipmentItems have
+            not been shipped. This function is planned for use in a build of
+            Logitrack that supports partial line-item fulfillment.
+        """
         return ShipmentItem.objects.filter(shipment=self, is_open=True).count() > 0
 
     def clean(self, *args, **kwargs):
+        """
+            This method overrides the Shipment class' parent's Model.clean()
+            method in order to update some non mandatory fields that may not be
+            present on some forms.
+        """
         super().clean(*args, **kwargs)
         # In the event that the shipment is flagged as shipped
         # and no date_shipped value is provided, default the date_shipped to be
@@ -180,20 +255,42 @@ class Shipment(models.Model):
             self.date_shipped = datetime.now()
 
     def save(self, *args, **kwargs):
+        """
+            This method overrides the Shipment class' Model.save()
+            method in order to update its related ShipmentItem instance in the
+            event that the Shipment is shipped.
+
+            The updates & saves made to the related ShipmentItem instances
+            initiates any updates of inventory quantities for the items. See
+            the ShipmentItem model for more details.
+        """
         super().save(*args, **kwargs)
+        # Check to see if ShipmentItems haven't been closed yet before updating
+        # and triggering an adjustment of inventory.
         if self.is_shipped and self.has_open_shipment_lines():
             shipment_items = ShipmentItem.objects.filter(shipment=self)
-            print(shipment_items)
             for shipment_item in shipment_items:
                 # Update the shipment line so that it no longer factors into
-                # the calculation
+                # any calculations
                 shipment_item.is_open = False
                 shipment_item.save()
 
 
 
 class ShipmentItem(models.Model):
-    """ShipmentItems represent line items on a Shipment """
+    '''
+        The following model captures detail-level information about shipments
+        to and from Logitrack's warehouse, primarily information regarding
+        the items on the shipment and their quantities.
+
+        The from_db class method is overridden here in order to compare
+        old and new quantity values, so that an item's inventory can be adjusted
+        accordingly. This is critical in the event that a user updates a
+        ShipmentItem's quantity from 5 to 10 - the delta must be calculated in
+        order to determine whether there is sufficient available inventory to
+        permit the update.
+
+    '''
 
     shipment = models.ForeignKey('Shipment', on_delete=models.PROTECT)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='shipmentitem_item')
@@ -209,6 +306,11 @@ class ShipmentItem(models.Model):
 
     @classmethod
     def from_db(cls, db, field_names, values):
+        """
+            This method overrides the ShipmentItem class' Model.from_db()
+            method in order to cache the instance's values and calculate
+            a delta between old and new quantity field values.
+        """
         instance = super(ShipmentItem, cls).from_db(db, field_names, values)
 
         # It's important to keep track of how the quantity on a shipment item
@@ -219,11 +321,19 @@ class ShipmentItem(models.Model):
         return instance
 
     def save(self, *args, **kwargs):
+        """
+            This method overrides the ShipmentItem class' save()
+            method in order to update the instance's associated Item's
+            quantity_available on create or update.
+        """
         # Force the model to clean before proceeding with the save (protects
         # against invalid model instances from being added by the Django shell)
         self.full_clean()
 
         shipment_direction = self.shipment.direction
+
+        # The save method should behave differently if the ShipmentItem instance
+        # is new to the database.
         if self._state.adding:
             if shipment_direction == 'OUT':
                 self.item.quantity_available -= self.quantity
@@ -262,6 +372,11 @@ class ShipmentItem(models.Model):
 
 
     def clean(self, *args, **kwargs):
+        """
+            This method overrides the ShipmentItem class' clean()
+            method in order to impose a set of validation constraints
+            on ShipmentItems.
+        """
         item_inventory_quantity = self.item.quantity_available
         shipment_direction = self.shipment.direction
 
@@ -309,25 +424,21 @@ class ShipmentItem(models.Model):
                     code="invalid_inventory_quantity_edit"
                 )
             elif shipment_direction == 'IN':
-                # This was explicitly left blank - no problems with updating inbound_shipment
+                # This was explicitly left blank - there are no quantity
+                # restrictions on inbound shipments
+
                 pass
 
 
         super(ShipmentItem, self).clean(*args, **kwargs)
 
-        #    print(self.quantity)
-        #    print(item_inventory_quantity)
-        #
 
 
-
-
-
-
-
-
-'''
-    The following class ... TODO
-'''
 class SKUFormat(models.Model):
+    '''
+        The following model is planned to be used to impose restrictions
+        on a company's SKU system for items.
+
+        Development on this model and feature is being pushed to a future build.
+    '''
     pass
