@@ -2,7 +2,10 @@ from django import forms
 from .models import Item, Shipment, ShipmentItem, Company
 from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
+"""
 
+
+"""
 class ItemCreateForm(forms.ModelForm):
 
     class Meta:
@@ -37,6 +40,10 @@ class ShipmentShipForm(forms.ModelForm):
 
 
 class ShipmentCreateForm(forms.ModelForm):
+    """
+        The following from
+
+    """
     unique_fields = {'item'}
     class Meta:
         model = Shipment
@@ -46,13 +53,26 @@ class ShipmentCreateForm(forms.ModelForm):
 
 
 class ShipmentItemCreateFormSet(BaseInlineFormSet):
+    """
+        The following formset is used to allow users to add multiple
+        ShipmentItems to a Shipment at a time.
 
+    """
     class Meta:
         model = ShipmentItem
         fields= ['item', 'quantity']
 
     def __init__(self, *args, **kwargs):
+        """
+            This method overrides the __init__ method in order to
+            restrict the Select field options to items that are both
+            shippable, and belonging to this company.
+            The company is passed as a keyword argument to the
+            view leveraging this formset.
+        """
         company_id = kwargs['instance'].company.id
+        # TODO: check direction of shipment to ensure shippable items
+        # are only excluded from outbound shipments.
         super(ShipmentItemCreateFormSet, self).__init__(*args, **kwargs)
 
         # Update each choice field to prevent selection of an item from a
@@ -61,8 +81,6 @@ class ShipmentItemCreateFormSet(BaseInlineFormSet):
             form.fields['item'].queryset = Item.objects.filter(company=company_id, is_shippable=True)
 
     def save(self, commit=True, *args, **kwargs):
-        print('save item create formset')
-        print(dir(self))
         super(ShipmentItemCreateFormSet, self).save(*args, **kwargs)
 
 

@@ -93,8 +93,21 @@ python3 manage.py runserver
 
 The last step is to go to localhost, port 8000 in your browser to start interacting with Logitrack!
 
+## Tests
+A series of automated tests have been prepared to help keep Logitrack stable
+as features are added.
+
+To launch the tests, simply run the following command from the project root.
+```shell
+python3 manage.py test
+```
+
 ## Quickstart - Iteracting with Logitrack
 Logitrack's user interface is still very much a work in progress.
+You'll find below some more information about its functionality.
+
+To view the full list of URLs, refer to the files `logitrack\urls.py`
+and `inventory\urls.py`
 
 ### Creating a company
 Before you can interact with items, you'll need to create a company that you can associate the items to. You can do so at the following URL
