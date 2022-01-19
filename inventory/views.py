@@ -8,6 +8,8 @@ from django.contrib import messages #TODO: add message handling to template
 from django.urls import reverse
 from .forms import ItemCreateForm, ShipmentCreateForm, ShipmentShipForm, ShipmentItemFormset, CompanyCreateForm
 
+from django.utils import timezone
+
 # Create your views here.
 def landing_page(request):
     return render(request, 'inventory/home.html', {})
@@ -166,9 +168,16 @@ class ShipmentCreateView(CreateView):
 
 
 class ShipmentShipView(UpdateView):
-    template_name = 'inventory/shipments/shipment_receive.html'
+    template_name = 'inventory/shipments/shipment_ship.html'
     form_class = ShipmentShipForm
     model = Shipment
+
+    pk_url_kwarg='shipmentid'
+
+    def get_initial(self):
+        initial = super(UpdateView, self).get_initial()
+        initial['date_shipped'] = timezone.now()
+        return initial
 
     def form_valid(self, form):
         shipment = form.save(commit=False)
@@ -176,12 +185,40 @@ class ShipmentShipView(UpdateView):
         is_valid = super().form_valid(form)
         return is_valid
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(ShipmentShipView, self).get_context_data(*args, **kwargs)
+
+        # Display existing shipments to the user, to provide feedback
+        # in the event that they try to change the 'is_shippable' property
+        # to false when there are pending shipments
+        shipmentid = self.kwargs.get("shipmentid")
+        shipmentItems = ShipmentItem.objects.filter(shipment=shipmentid)
+        context['shipmentItems'] = shipmentItems
+        return context
+
+    def form_valid(self, form):
+        self.company = get_object_or_404(Company, id=self.kwargs['company'])
+
+        shipment = form.save(commit=False)
+        #update things
+        self.is_shipped = True
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('view-all-shipments', kwargs={'company': self.company.id})
+
 
 class ShipmentReceiveView(UpdateView):
     template_name = 'inventory/shipments/shipment_receive.html'
     form_class = ShipmentShipForm
     model = Shipment
     pk_url_kwarg='shipmentid'
+
+    def get_initial(self):
+        initial = super(UpdateView, self).get_initial()
+        initial['date_shipped'] = timezone.now()
+        return initial
 
     def get_context_data(self, *args, **kwargs):
         context = super(ShipmentReceiveView, self).get_context_data(*args, **kwargs)
@@ -198,7 +235,7 @@ class ShipmentReceiveView(UpdateView):
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
         shipment = form.save(commit=False)
         #update things
-
+        self.is_shipped = True
         is_valid = super().form_valid(form)
         return is_valid
 

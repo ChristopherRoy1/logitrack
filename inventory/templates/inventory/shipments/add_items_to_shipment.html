@@ -12,14 +12,18 @@ or equal to its remaining inventory!</h3>
   <thead>
     <th>SKU</th>
     <th>Product Name</th>
-    <th>Quantity</th>
+    <th>Quantity Available</th>
+    <th>Quantity Inbound</th>
+    <th>Quantity Allocated</th>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
       <td>{{item.sku}}</td>
       <td>{{item.product_name}}</td>
-      <td>{{item.quantity}}</td>
+      <td>{{item.quantity_available}}</td>
+      <td>{{item.quantity_inbound}}</td>
+      <td>{{item.quantity_allocated}}</td>
     </tr>
       {% endfor %}
   </tbody>

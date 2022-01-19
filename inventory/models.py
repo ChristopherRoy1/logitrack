@@ -54,12 +54,16 @@ class Item(models.Model):
     )
 
     def quantity_inbound(self):
-        #TODO: search on all item shipments
-        return 0
+        query = ShipmentItem.objects.filter(item=self, shipment__is_shipped=False, shipment__direction='IN').aggregate(Sum('quantity'))
+
+        result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
+        return result
 
     def quantity_allocated(self):
         #TODO: search on all item shipments
-        return 0
+        query = ShipmentItem.objects.filter(item=self, shipment__is_shipped=False, shipment__direction='OUT').aggregate(Sum('quantity'))
+        result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
+        return result
 
     def get_absolute_url(self):
         view_name = 'view-item'
@@ -135,42 +139,80 @@ class Shipment(models.Model):
         # and no date_shipped value is provided, default the date_shipped to be
         # the current time
         if self.is_shipped and self.date_shipped is None:
-            self.date_shipped = datetime.now
+            self.date_shipped = datetime.now()
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.is_shipped and self.has_open_shipment_lines():
             shipment_items = ShipmentItem.objects.filter(shipment=self)
+            print(shipment_items)
             for shipment_item in shipment_items:
-                related_item = shipment_item.item
-
-                # Update the item's quantity according to the shipment direction
-                if self.direction == 'OUT':
-                    related_item.quantity_available -= shipment_item.quantity
-                else:
-                    related_item.quantity_available += shipment_item.quantity
-
-                related_item.save()
-                # We also need to update the shipment lines
+                # Update the shipment line so that it no longer factors into
+                # the calculation
                 shipment_item.is_open = False
                 shipment_item.save()
 
 
 
 class ShipmentItem(models.Model):
+    """ShipmentItems represent line items on a Shipment """
+
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='shipmentitem_item')
     quantity = models.PositiveIntegerField()
     is_open = models.BooleanField(default=True)
 
-    def clean(self, *args, **kwargs):
-        super().clean(*args, **kwargs)
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super(ShipmentItem, cls).from_db(db, field_names, values)
 
-        if self.quantity is not None and self.quantity < 0:
-            raise ValidationError(
-                'A shipment quantity must be non-negative',
-                code='negative_qty'
-            )
+        # It's important to keep track of how the quantity on a shipment item
+        # has changed - shipment quantity is allocated at the time of create/update,
+        # so if the quantity on a shipment item began at 50 but increased to 100,
+        # the quantity available of the inventory should only increase by 100
+        instance._loaded_values = dict(zip(field_names, values))
+        return instance
+
+    def save(self, *args, **kwargs):
+        shipment_direction = self.shipment.direction
+        if self._state.adding:
+            if shipment_direction == 'OUT':
+                self.item.quantity_available -= self.quantity
+            else:
+                self.item.quantity_available += self.quantity
+
+            self.item.save()
+
+        elif self.quantity != self._loaded_values['quantity']:
+            cur_qty = self.quantity
+            old_qty = self._loaded_values['quantity']
+
+            qty_difference = cur_qty - old_qty
+
+            if shipment_direction == 'OUT':
+                self.item.quantity_available -= qty_difference
+            else:
+                self.item.quantity_available += qty_difference
+
+            self.item.save()
+
+        super(ShipmentItem, self).save(*args, **kwargs)
+
+    def delete(self):
+        """ Override the delete method to adjust item inventory accordingly """
+
+        shipment_direction = self.shipment.direction
+        if shipment_direction == 'OUT':
+            # Unallocate the Inventory
+            self.item.quantity_available += self.quantity
+        else:
+            self.item.quantity_available -= self.quantity
+
+        self.item.save()
+        super(ShipmentItem, self).delete()
+
+
+    def clean(self, *args, **kwargs):
 
         item_inventory_quantity = self.item.quantity_available
         shipment_direction = self.shipment.direction
@@ -180,15 +222,44 @@ class ShipmentItem(models.Model):
                 "An unexpected error occured. The item was not added to the shipment",
                 code="missing_inventory_record"
             )
+        if self._state.adding:
 
-            print(self.quantity)
-            print(item_inventory_quantity)
-        if shipment_direction == "OUT" and self.quantity > item_inventory_quantity:
-            raise ValidationError(
-                "An outbound shipment cannot ship more inventory than is available. Inventory Qty: %(qty_inv)s - Entered Qty: %(ship_qty)s",
-                params={'qty_inv': item_inventory_quantity, 'ship_qty': self.quantity},
-                code="invalid_inventory_quantity"
-            )
+            if shipment_direction == "OUT" and self.quantity > item_inventory_quantity:
+                raise ValidationError(
+                    "An outbound shipment cannot ship more inventory than is available. Inventory Qty: %(qty_inv)s - Entered Qty: %(ship_qty)s",
+                    params={'qty_inv': item_inventory_quantity, 'ship_qty': self.quantity},
+                    code="invalid_inventory_quantity"
+                )
+        elif self.quantity != self._loaded_values['quantity']:
+            # We need to make sure that an increase in quantity does not
+            # exceed the available inventory
+
+            cur_qty = self.quantity
+            old_qty = self._loaded_values['quantity']
+            avail_qty = item_inventory_quantity
+
+            qty_difference = cur_qty - old_qty
+
+
+            if shipment_direction == 'OUT' and cur_qty > avail_qty + old_qty:
+                raise ValidationError(
+                    "Modifying this line would create negative inventory. Inventory Qty: %(qty_inv)s - Old Qty: %(old_qty)s - New Qty: %(new_qty)",
+                    params={'qty_inv': avail_qty, 'old_qty': old_qty, 'new_qty': cur_qty},
+                    code="invalid_inventory_quantity_edit"
+                )
+            elif shipment_direction == 'IN':
+                # This was explicitly left blank - no problems with updating inbound_shipment
+                pass
+
+
+        super(ShipmentItem, self).save(*args, **kwargs)
+
+
+        super().clean(*args, **kwargs)
+
+        #    print(self.quantity)
+        #    print(item_inventory_quantity)
+        #
 
 
 

@@ -23,7 +23,19 @@
         <td>{{ shipment.date_shipped }}</td>
         <td>{{ shipment.direction }}</td>
         <td>{{ shipment.to_address }}</td>
-        <td>{% if shipment.date_shipped %}---------{% else %}<a href="{% url 'edit-shipment' company=shipment.company.id shipmentid=shipment.id %}">View & Edit Shipment</a>{% endif %}</td>
+        <td>
+          {% if shipment.date_shipped %}
+          ---------
+          {% else %}
+            <a href="{% url 'edit-shipment' company=shipment.company.id shipmentid=shipment.id %}">Edit</a>
+            {% if shipment.direction == "OUT" %}
+              |<a href="{% url 'ship-shipment' company=view.kwargs.company shipmentid=shipment.id %}">Ship</a>
+            {% elif shipment.direction == "IN" %}
+              |<a href="{% url 'receive-shipment' company=view.kwargs.company shipmentid=shipment.id %}">Receive</a>
+            {% endif %}
+          {% endif %}
+        </td>
+
     </tr>
     {% endfor %}
   </tbody>

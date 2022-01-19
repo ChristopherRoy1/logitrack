@@ -1,0 +1,52 @@
+{% extends 'inventory/base_structure.html' %}
+
+
+{% block content %}
+
+<h1>Shipping Shipment {{object.id}}</h1>
+<h2>Header Details</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Shipment ID</th>
+      <th>For Company</th>
+      <th>Date Created</th>
+      <th>Date Promised</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>{{object.id}}</th>
+      <th>{{object.company.name}}</th>
+      <th>{{object.date_created}}</th>
+      <th>{{object.date_received}}</th>
+    </tr>
+  </tbody>
+</table>
+<hr>
+<h2>Footer Details</h2>
+  <table>
+    <thead>
+      <th>SKU</th>
+      <th>Product Name</th>
+      <th>Quantity</th>
+    </thead>
+    <tbody>
+      {% for shipment_item in shipmentItems %}
+      <tr>
+        <td>{{shipment_item.item.sku}}</td>
+        <td>{{shipment_item.item.product_name}}</td>
+        <td>{{shipment_item.quantity}}</td>
+      </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+
+<hr>
+<form action="." method="POST">
+  {% csrf_token %}
+  {{form.as_p}}
+  <input type="submit" value="Ship Shipment">
+</form>
+
+{% endblock content %}

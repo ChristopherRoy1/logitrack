@@ -26,9 +26,13 @@ class CompanyCreateForm(forms.ModelForm):
 class ShipmentShipForm(forms.ModelForm):
     class Meta:
         model = Shipment
+        labels = {
+            'date_shipped': 'Ship/Receive Date'
+        }
         fields = [
-            'is_shipped', 'date_shipped'
+            'date_shipped'
         ]
+
 
 
 
