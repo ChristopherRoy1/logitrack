@@ -5,18 +5,6 @@ from django.core.exceptions import ValidationError
 
 from django.utils import timezone
 
-# Create your tests here.
-class CompanyTestCase(TestCase):
-    def setUp(self):
-        Company.objects.create(name="The Test Company")
-
-
-    def test_name_field_unique(self):
-        """Company name should be unique"""
-        with self.assertRaises(IntegrityError):
-            Company.objects.create(name="The Test Company")
-
-
 class ItemTestCase(TestCase):
     def setUp(self):
         self.company1 = Company.objects.create(name="The Test Company")
@@ -211,6 +199,10 @@ class ItemClassMethodTestCase(TestCase):
         )
 
     def test_method_can_have_shipping_disabled(self):
+        """
+            This is a test to validate the can_have_shipping_disabled Item
+            model method
+        """
         # The item is not on any shipments, so it should be able to be disabled
         self.assertTrue(self.item1.can_have_shipping_disabled())
 
@@ -522,3 +514,15 @@ class OutboundShipmentQuantityTestCase(TestCase):
 
     def test_delete_item_with_open_shipments(self):
         pass
+
+
+# Create your tests here.
+class CompanyTestCase(TestCase):
+    def setUp(self):
+        Company.objects.create(name="The Test Company")
+
+
+    def test_name_field_unique(self):
+        """ This test validates that a Company's name field must be unique"""
+        with self.assertRaises(IntegrityError):
+            Company.objects.create(name="The Test Company")

@@ -103,13 +103,13 @@ class ItemUpdateView(UpdateView):
         """
         context = super(ItemUpdateView, self).get_context_data(*args, **kwargs)
 
-        # TODO: Display existing shipments to the user, to provide feedback
-        # in the event that they try to change the 'is_shippable' property
-        # to false when there are pending shipments
         item_id = self.kwargs.get("id")
         item_company = Item.objects.filter(id=item_id).values('company').distinct()
+
         context['shipments'] = Shipment.objects.filter(company__in=item_company)
+
         return context
+
 
 class ItemDeleteView(DeleteView):
     """
@@ -172,7 +172,7 @@ class CompanyDetailView(DetailView):
 
 class CompanyListView(ListView):
     """
-        The following class displays a list of companies within Logitrack
+        The following view displays a list of companies within Logitrack
     """
     model = Company
     template_name='inventory/companies/company_list.html'
@@ -185,12 +185,14 @@ class CompanyListView(ListView):
 
 class ShipmentListView(ListView):
     """
-        TODO: add docstring
+        This provides VIEW (list) functionality for all Shipment instances
+        within Logitrack for a given company (supplied as a URL parameter)
     """
     model = Shipment
     template_name = 'inventory/shipments/shipment_list.html'
 
     def get_queryset(self):
+        # We only display
         print(self.kwargs['company'])
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
         return Shipment.objects.filter(company=self.company)
@@ -198,7 +200,8 @@ class ShipmentListView(ListView):
 
 class ShipmentCreateView(CreateView):
     """
-        TODO: add docstring
+        The following class allows for the creation of a Shipment instance
+        within Logitrack
     """
     template_name = 'inventory/shipments/create_shipment.html'
     form_class = ShipmentCreateForm
@@ -219,6 +222,10 @@ class ShipmentCreateView(CreateView):
 
 
 class ShipmentShipView(UpdateView):
+    """
+        The following class allows to update an outbound Shipment instance to be
+        'shipped'
+    """
     template_name = 'inventory/shipments/shipment_ship.html'
     form_class = ShipmentShipForm
     model = Shipment
@@ -233,12 +240,11 @@ class ShipmentShipView(UpdateView):
     def get_context_data(self, *args, **kwargs):
         context = super(ShipmentShipView, self).get_context_data(*args, **kwargs)
 
-        # Display existing shipments to the user, to provide feedback
-        # in the event that they try to change the 'is_shippable' property
-        # to false when there are pending shipments
+        # Display the items on the shipment that is being marked as shipped
         shipmentid = self.kwargs.get("shipmentid")
         shipmentItems = ShipmentItem.objects.filter(shipment=shipmentid)
         context['shipmentItems'] = shipmentItems
+
         return context
 
     def form_valid(self, form):
@@ -246,7 +252,8 @@ class ShipmentShipView(UpdateView):
 
         shipment = form.save(commit=False)
 
-        # The is_shipped checkbox is not visible on the form
+        # The is_shipped checkbox is not visible on the form, but the form
+        # submission indicates that the shipment was received.
         shipment.is_shipped = True
 
         return super().form_valid(form)
@@ -256,6 +263,11 @@ class ShipmentShipView(UpdateView):
 
 
 class ShipmentReceiveView(UpdateView):
+    """
+        The following class allows for the updating of an (inbound)
+        Shipment instance within Logitrack to be 'received'
+    """
+
     template_name = 'inventory/shipments/shipment_receive.html'
     form_class = ShipmentShipForm
     model = Shipment
@@ -278,9 +290,15 @@ class ShipmentReceiveView(UpdateView):
         return context
 
     def form_valid(self, form):
+        """
+            This overrides the form_valid method of the UpdateView class,
+            is order to add to the form data that the shipment was received
+        """
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
         shipment = form.save(commit=False)
-        #update things
+
+        # Inbound shipments with is_shipped =True are considered received, which
+        # is the desired result for this form submission
         shipment.is_shipped = True
         is_valid = super().form_valid(form)
         return is_valid
@@ -292,7 +310,10 @@ class ShipmentReceiveView(UpdateView):
 
 class ShipmentEditItemView(SingleObjectMixin, FormView):
     """
-        TODO: add docstring
+        The following class allows for multiple ShipmentItems to be both
+        created and associated to a single Shipment item within Logitrack,
+        all on the same page.
+
     """
     template_name = 'inventory/shipments/add_items_to_shipment.html'
     model = Shipment
@@ -320,6 +341,10 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
         return super().post(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
+        """
+            This function is used to supply the inlineformset, which is
+            imported from inventory/models.py
+        """
         return ShipmentItemFormset(**self.get_form_kwargs(), instance=self.object)
 
     def form_valid(self, form):
