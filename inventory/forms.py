@@ -3,11 +3,14 @@ from .models import Item, Shipment, ShipmentItem, Company
 from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
 """
+    The following classes override the default Django ModelForms
+    behavior for the different classes within Logitrack.
 
+    The ShipmentItemCreateFormSet is the only class within this file,
+    at the time of writing, that overrides any default methods.
 
 """
 class ItemCreateForm(forms.ModelForm):
-
     class Meta:
         model = Item
         fields = [
@@ -19,7 +22,6 @@ class ItemCreateForm(forms.ModelForm):
 
 
 class CompanyCreateForm(forms.ModelForm):
-
     class Meta:
         model = Company
         fields = [
@@ -42,11 +44,6 @@ class ShipmentShipForm(forms.ModelForm):
 
 
 class ShipmentCreateForm(forms.ModelForm):
-    """
-        The following from
-
-    """
-    unique_fields = {'item'}
     class Meta:
         model = Shipment
         fields = [

@@ -54,7 +54,7 @@ With everything installed, clone the repository to download a copy to the curren
 git clone git@github.com:ChristopherRoy1/logitrack.git
 ```
 
-Next, create & activate a virtualenvironment. If you have virtualenvwrapper installed, you can execute the following commands to create & activate a virtual environment:
+Next, create & activate a virtual environment. If you have virtualenvwrapper installed, you can execute the following commands to create & activate a virtual environment:
 
 ```shell
 mkvirtualenv logitrack_env
@@ -66,27 +66,34 @@ After ensuring the shell is in the repository's root directory, you can install 
 python3 -m pip install -r requirements.txt
 ```
 
-## Launching Logitrack
-To launch Logitrack, you'll need to execute a few commands.
+## Launching Logitrack for the first time
+To launch for the first time, Logitrack, you'll need to execute some commands
+first.
 
-First, the database migrations must be generated to update the database schema (as well as generate the database file!)
-
+While not strictly necessary as all migration files are included in the
+repository, execute the following command to ensure any missing migrations
+are generated.
 ```shell
 python3 manage.py makemigrations
 ```
-
+Once complete, we need to create the database (which is not included in the repository )& update the database schema using the migrations files. This will all be done by the following command
 
 ```shell
 python3 manage.py migrate
 ```
 
-In order to view Logitrack's admin panel, you'll need to add yourself as a super user. Execute the following command and provide input to the prompts.
+### Optional command
+> In order to view Logitrack's admin panel, you'll need to add yourself as a super user. Execute the following command and provide input to the prompts.
 
-```shell
-python3 manage.py createsuperuser
-```
+>```shell
+> python3 manage.py createsuperuser
+>```
 
-Finally, to launch Logitrack, start the server!
+
+## Launching Logitrack
+
+With the database generated, we can now launch logitrack! Execute the following command
+
 ```shell
 python3 manage.py runserver
 ```
@@ -102,15 +109,37 @@ To launch the tests, simply run the following command from the project root.
 python3 manage.py test
 ```
 
-## Quickstart - Iteracting with Logitrack
-Logitrack's user interface is still very much a work in progress.
+## Quickstart - Interacting with Logitrack
+Logitrack's user interface is still very much a work in progress, and the developer apologizes for the lack of CSS.
+
+
 You'll find below some more information about its functionality.
 
 To view the full list of URLs, refer to the files `logitrack\urls.py`
 and `inventory\urls.py`
 
+### Skipping the user interface:
+While the user interface is functional (and described in more detail in the following sections) you can use the list of urls below to quickly navigate across logitrack's pages.
+
+Create a company: http://localhost:8000/create-company/
+Create an item: http://localhost:8000/create-item/
+
+View all items: http://localhost:8000/view-all-items/
+View all companies: http://localhost:8000/view-all-companies/
+
+Assuming an ID of 1 for the company, item, and shipment, these models can be interacted with using the following links:
+
+View an item: http://localhost:8000/item/1
+Update an item: http://localhost:8000/item/1/edit/
+Delete an item: http://localhost:8000/item/1/delete/
+
+View a company: http://localhost:8000/company/1
+View shipments for a company: http://localhost:8000/company/1/shipments/
+Create a new shipment (for a company): http://localhost:8000/company/1/shipments/create/
+Edit a shipment & add items: http://localhost:8000/company/1/shipments/1/items/
+
 ### Creating a company
-Before you can interact with items, you'll need to create a company that you can associate the items to. You can do so at the following URL
+Before you can interact with items, you'll need to create a company that you can associate the items to. You can do so at the following URL:
 
 http://localhost:8000/create-company/
 
@@ -130,17 +159,27 @@ http://localhost:8000/view-all-items/
 
 You can click on the 'View' link in one of the table rows to view the corresponding item.
 
-## Edit an item
+### Edit an item
 Navigate to the view all items view, and click on the 'Edit' link (right next to view)
 
-## Delete an Item
-From the view all items page, click on the 'Delete' link in the last column.
+### Delete an Item
+From the view all items page, click on the 'Delete' link in the last column. Be sure to click the 'Delete Item' on this page button!
+
+For example, to delete an item with ID 1, you can navigate to the following URL:
+http://localhost:8000/item/1/delete/
 
 
-## Shipments - view
+
+### Shipments - view
 To view a company's shipments, click on the 'View Companies' page and select the 'View Shipments link'
 
-## Shipments - create
+Ex: For a company with ID 1, their shipments can be viewed here: http://localhost:8000/company/1/shipments/
+
+### Shipments - create
+To create a shipment, visit http://localhost:8000/view-all-companies/ and click on the 'View Shipments' link for the company that you wish to create a shipment for.
+
+For example, to create a shipment for company with ID 1, this can be done at the following link:
+http://localhost:8000/company/1/shipments/create/
 
 ### Shipment types
 There are two types of shipments supported by Logitrack
@@ -148,5 +187,16 @@ There are two types of shipments supported by Logitrack
   - Outbound shipments, which decrease the available quantity for an item when they are shipped from the warehouse
 
 
-
 Before items can be assigned to a shipment, you must create a shipment in the sytem first.
+
+# Next steps & future improvements
+
+There are many improvements that can be made to Logitrack. Here are a few that come to mind:
+
+- Test coverage
+  - More tests for the models are needed
+  - There are no tests written to validate forms
+  - Similarly, there are no tests to validate the behavior of Logitrack's views
+
+- SKU Validation
+   - To improve for the efficiency of pick, pack, and shipping, SKU formatting can be added to the application. This would allow clients of the logistics company to force a SKU format on their items.
