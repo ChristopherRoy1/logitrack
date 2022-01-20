@@ -5,7 +5,7 @@ by Christopher Roy
 ## About
 Logitrack is an inventory management system that allows a logistics company to manage their warehouse's inventory.
 
-It implements basic CRUD functionality for items, along with the ability to assign inventory to shipments.
+It implements basic CRUD functionality for items, along with the ability to assign inventory to shipments. Company models were also created to allow for the logistics company running Logitrack to serve more than one client!
 
 
 ## Stack
