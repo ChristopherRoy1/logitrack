@@ -31,7 +31,7 @@
         <td>{{ item.quantity_allocated}}</td>
         <td>{{ item.date_created }}</td>
         <td>{{ item.date_last_modified }}</td>
-        <td><a href="{{ item.get_absolute_delete_url }}">Delete</a></td>
+        <td>{% if item.is_on_shipments %} --{%else %}<a href="{{ item.get_absolute_delete_url }}">Delete</a>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

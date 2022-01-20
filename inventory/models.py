@@ -28,7 +28,10 @@ class Item(models.Model):
 
 
     # The identifier used to differentiate between different items. Included
-    # on the printing labels in the warehouse to help with picking for shipments
+    # on the printing labels in the warehouse to help with picking for shipments.
+    # At the time of writing, SKUs must be unique across all companies. It is
+    # planned to enforce uniqueness only across items within a company, and not
+    # global uniqueness as currently implemented.
     sku = models.CharField(max_length=16, unique=True)
 
 
@@ -78,18 +81,18 @@ class Item(models.Model):
 
 
     def can_calculate_volume(self):
-        """ A helper function to determine whether an item's volume can be calculated """
+        """ A helper method to determine whether an item's volume can be calculated """
         return not (self.dimension_x_value is None or self.dimension_y_value is None or self.dimension_x_value is None)
 
     def total_volume_unit(self):
-        """ A helper function to return the units for an item's volume """
+        """ A helper method to return the units for an item's volume """
         if not self.can_calculate_volume():
             return None
         else:
             return "%(dimension_unit)s ^ 3" % self.dimension_unit
 
     def total_volume_value(self):
-        """ A helper function to calculate an item's total volume """
+        """ A helper method to calculate an item's total volume """
         if not self.can_calculate_volume():
             return None
         else:
@@ -97,18 +100,23 @@ class Item(models.Model):
 
     def quantity_inbound(self):
         """
-        A helper function to calculate the total quantity of the item on all
+        A helper method to calculate the total quantity of the item on all
         inbound shipments. Used primarily to improve user experience across the
         different views & forms within Logitrack
         """
-        query = ShipmentItem.objects.filter(item=self, shipment__is_shipped=False, shipment__direction='IN').aggregate(Sum('quantity'))
+        query = ShipmentItem.objects.filter(
+            item=self,
+            shipment__is_shipped=False,
+            shipment__direction='IN',
+            is_open=True
+        ).aggregate(Sum('quantity'))
 
         result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
         return result
 
     def quantity_allocated(self):
         """
-        A helper function to calculate the total quantity of the item on
+        A helper method to calculate the total quantity of the item on
         outbound shipments for the item. Used primarily to improve user
         experience across the different views & forms within Logitrack
         """
@@ -118,12 +126,26 @@ class Item(models.Model):
         query = ShipmentItem.objects.filter(
             item=self,
             shipment__is_shipped=False,
-            shipment__direction='OUT'
+            shipment__direction='OUT',
+            is_open=True
         ).aggregate(Sum('quantity'))
 
         # Check for None before returning the result
         result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
         return result
+
+    def can_have_shipping_disabled(self):
+        return self.quantity_allocated() == 0 and self.quantity_inbound() == 0
+
+    def is_on_shipments(self):
+        return self.quantity_allocated() > 0 or self.quantity_inbound() > 0
+
+    def in_valid_delete_state(self):
+        if self.is_on_shipments():
+            return False
+
+
+        return True
 
     def get_absolute_url(self):
         """
@@ -156,6 +178,31 @@ class Item(models.Model):
         """
         fields_to_display = (self.company.name, self.sku, self.product_name)
         return '|'.join(fields_to_display)
+
+    def delete(self):
+        qty_inbound = self.quantity_inbound()
+        qty_allocated = self.quantity_allocated()
+        if qty_inbound > 0 or qty_allocated > 0:
+            raise ValidationError(
+                "You cannot delete an item that is on a shipment. Qty inbound: %(qty_inbound)s, Qty allocated: %(qty_allocated)s",
+                params={'qty_inbound': qty_inbound, 'qty_allocated': qty_allocated},
+                code="item_on_shipment"
+            )
+        else:
+            super(Item, self).delete()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Item, self).save(*args, **kwargs)
+
+    def clean(self):
+        super(Item, self).clean()
+
+        if not self.can_have_shipping_disabled() and not self.is_shippable:
+            raise ValidationError(
+                "You cannot set an item to be non-shippable when it is on shipments",
+                code="disable_item_when_on_shipment"
+            )
 
 
 
@@ -235,8 +282,8 @@ class Shipment(models.Model):
 
     def has_open_shipment_lines(self):
         """
-            A helper function to validate whether any related ShipmentItems have
-            not been shipped. This function is planned for use in a build of
+            A helper method to validate whether any related ShipmentItems have
+            not been shipped. This method is planned for use in a build of
             Logitrack that supports partial line-item fulfillment.
         """
         return ShipmentItem.objects.filter(shipment=self, is_open=True).count() > 0

@@ -67,7 +67,7 @@ python3 -m pip install -r requirements.txt
 ```
 
 ## Launching Logitrack
-To launch Logictrack, you'll need to execute a few commands.
+To launch Logitrack, you'll need to execute a few commands.
 
 First, the database migrations must be generated to update the database schema (as well as generate the database file!)
 

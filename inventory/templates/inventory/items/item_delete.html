@@ -1,9 +1,15 @@
 {% extends 'inventory/base_structure.html' %}
 
 {% block content %}
+
+
 <form action="." method="POST"> {% csrf_token %}
+  {% if error %}
+    {{ error }}
+  {% else %}
   <h1>This action cannot be undone. Do you want to delete item {{item.sku}}?</h1>
   <input type="submit" value="Delete Item">
+  {% endif %}
 </form>
 
 {% endblock content %}

@@ -20,7 +20,7 @@ class CompanyTestCase(TestCase):
 class ItemTestCase(TestCase):
     def setUp(self):
         self.company1 = Company.objects.create(name="The Test Company")
-        Item.objects.create(
+        self.item1 = Item.objects.create(
             sku="BLU-SHRT-LG",
             company=self.company1,
             product_name="Blue Shirt (Large)",
@@ -32,9 +32,27 @@ class ItemTestCase(TestCase):
             dimension_z_value=3
         )
 
+        self.item2 = Item.objects.create(
+            sku="BLU-SHRT-SM",
+            company=self.company1,
+            product_name="Blue Shirt (Small)",
+            quantity_available=100,
+            weight_value=10,
+            weight_unit='kg',
+            is_shippable=True,
+            dimension_x_value=1,
+            dimension_y_value=2,
+            dimension_z_value=3
+        )
+
 
     def test_unique_item_sku_same_company(self):
-        with self.assertRaises(IntegrityError):
+        """
+            This test ensures that items cannot share SKUs within the same
+            company. We attempt to create an item with the sku "BLU-SHRT-LG",
+            which already exists in the db as a result of the setUp method.
+        """
+        with self.assertRaises(ValidationError):
             Item.objects.create(
                 sku="BLU-SHRT-LG",
                 company=self.company1,
@@ -48,8 +66,14 @@ class ItemTestCase(TestCase):
             )
 
     def test_unique_item_sku_diff_company(self):
+        """
+            This test ensures that duplicate item SKUs cannot exist across
+            companies. The plan is to eventually remove this test as
+            sku uniqueness will be supported only within a company, and
+            not globally.
+        """
         company_w_same_sku = Company.objects.create(name="Company With Same Sku")
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValidationError):
             Item.objects.create(
                 sku="BLU-SHRT-LG",
                 company=company_w_same_sku,
@@ -61,6 +85,133 @@ class ItemTestCase(TestCase):
                 dimension_y_value=2,
                 dimension_z_value=3
             )
+
+    def test_delete_item_with_open_shipments(self):
+        """
+            This test is to ensure that Logitrack does not allow
+            the deletion of items that are on shipments.
+        """
+        shipment = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        ShipmentItem.objects.create(
+            item=self.item2,
+            quantity=10,
+            shipment=shipment
+        )
+
+
+        with self.assertRaises(ValidationError):
+            # Updating the is_shippable field to false when there is already
+            # an open shipment with this item on it should fail.
+            self.item2.is_shippable=False
+            self.item2.save()
+
+    def test_update_shippable_item_with_closed_shipments(self):
+        """
+            This test is to ensure that Logitrack allows for items to be
+            deleted when all shipments that they were on are closed.
+        """
+        shipment = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        ShipmentItem.objects.create(
+            item=self.item2,
+            quantity=10,
+            shipment=shipment
+        )
+
+        with self.assertRaises(ValidationError):
+            # Updating the is_shippable field to false when there is already
+            # an open shipment with this item on it should fail.
+            self.item2.is_shippable=False
+            self.item2.save()
+
+        # Once we update the shipment to true, now the item should be eligible
+        # to be modified.
+        shipment.is_shipped=True
+        shipment.save()
+
+        self.item2.is_shippable=False
+        self.item2.save()
+
+
+    def test_delete_item_that_has_been_shipped(self):
+        """
+            This test is to ensure that items can be deleted once
+            all inbound and outbound shipments associated with it have
+            been shipped/received.
+        """
+        shipment = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        shipment2 = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='IN'
+        )
+
+        ShipmentItem.objects.create(
+            item=self.item2,
+            quantity=10,
+            shipment=shipment
+        )
+
+        ShipmentItem.objects.create(
+            item=self.item2,
+            quantity=10,
+            shipment=shipment2
+        )
+
+        shipment.is_shipped=True
+        shipment.save()
+
+        # The attempt to delete should fail, as shipment2, which has the
+        # item associated to it, is still not received
+        with self.assertRaises(ValidationError):
+            self.item2.delete()
+
+        shipment2.is_shipped=True
+        shipment2.save()
+
+        # This should no longer raise any exceptions
+        self.item2.delete()
+
+
+class ItemClassMethodTestCase(TestCase):
+    def setUp(self):
+        self.item1 = Item.objects.create(
+            sku="BLU-SHRT-LG",
+            company=self.company1,
+            product_name="Blue Shirt (Large) Duplicate",
+            quantity_available=100,
+            weight_value=10,
+            weight_unit='kg',
+            dimension_x_value=1,
+            dimension_y_value=2,
+            dimension_z_value=3
+        )
+
+    def test_can_have_shipping_disabled(self):
+        # The item is not on any shipments, so it should be able to be disabled
+        assertTrue(self.item1.can_have_shipping_disabled())
 
 
 class ShipmentItemTestCase(TestCase):
@@ -250,3 +401,7 @@ class OutboundShipmentQuantityTestCase(TestCase):
         self.shippableItem1 = Item.objects.get(pk=self.shippableItem1.pk)
         self.assertEquals(self.shippableItem1.quantity_allocated(), 0)
         self.assertEquals(self.shippableItem1.quantity_available, 10)
+
+
+    def test_delete_item_with_open_shipments(self):
+        pass

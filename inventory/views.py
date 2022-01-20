@@ -1,24 +1,34 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from .models import Company, Item, Shipment, ShipmentItem
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView, FormView
 from django.views.generic.detail import SingleObjectMixin
-from django.contrib import messages #TODO: add message handling to template
-                                    #      & create messages to display in views
+from django.contrib import messages
 from django.urls import reverse
 from .forms import ItemCreateForm, ShipmentCreateForm, ShipmentShipForm, ShipmentItemFormset, CompanyCreateForm
 
 from django.utils import timezone
 
+
+"""
+    Function based views
+"""
+
 # Create your views here.
 def landing_page(request):
+    """
+        The following function handles requests for the
+        homepage of the application.
+    """
     return render(request, 'inventory/home.html', {})
 
-'''
-TODO: convert this to a ListView
-'''
+
 def view_all_items(request):
-    """TODO: populate docstring """
+    """
+        The following function handles requests to view all items
+        currently present in Logitrack.
+    """
+
     items = Item.objects.all()
 
     context = {
@@ -36,20 +46,20 @@ def view_all_items(request):
 
 class ItemCreateView(CreateView):
     """
-        TODO: add docstring
+        The following class implements the CREATE view for items within
+        Logitrack. It is a subclass of the generic CreateView supplied by
+        Django.
     """
     template_name = 'inventory/items/item_create.html'
     form_class = ItemCreateForm
     model = Item
 
-    def form_valid(self, form):
-        return super().form_valid(form)
-
 
 
 class ItemDetailView(DetailView):
     """
-        The following class is used to display information about a single item.
+        The following class implements the READ/DETAIL view for a single item.
+        It is a subclass of the generic DetailView supplied by Django.
 
         The item being requested is passed as a kwarg, which is used in the
         overriden get_object function to retrieve the associated item
@@ -59,26 +69,41 @@ class ItemDetailView(DetailView):
     template_name = 'inventory/items/item_detail.html'
 
     def get_object(self):
+        """
+            This method retrieves the ID of the requested item from the URL
+            and returns the corresponding item, if it exists in the database.
+            If the item does not exist, a 404 response is returned.
+        """
         item_id = self.kwargs.get("id")
         return get_object_or_404(Item, id=item_id)
 
 
 class ItemUpdateView(UpdateView):
     """
-        TODO: add docstring
+        The following class implements the EDIT view for the items within
+        Logitrack. It is a subclass of the generic UpdateView supplied by Django.
     """
     template_name = 'inventory/items/item_update.html'
     form_class = ItemCreateForm
     model = Item
 
     def get_object(self):
+        """
+            This method retrieves the ID of the requested item from the URL
+            and returns the corresponding item, if it exists in the database.
+            If the item does not exist, a 404 response is returned.
+        """
         item_id = self.kwargs.get("id")
         return get_object_or_404(Item, id=item_id)
 
     def get_context_data(self, *args, **kwargs):
+        """
+            The following method overrides the UpdateView's get_context_data()
+            method, in order to include shipment information when updating an item.
+        """
         context = super(ItemUpdateView, self).get_context_data(*args, **kwargs)
 
-        # Display existing shipments to the user, to provide feedback
+        # TODO: Display existing shipments to the user, to provide feedback
         # in the event that they try to change the 'is_shippable' property
         # to false when there are pending shipments
         item_id = self.kwargs.get("id")
@@ -88,21 +113,44 @@ class ItemUpdateView(UpdateView):
 
 class ItemDeleteView(DeleteView):
     """
-        TODO: add docstring
+        The following class implements the DELETE view for items within
+        Logitrack.
     """
     template_name = 'inventory/items/item_delete.html'
+    model = Item
+
 
     def get_object(self):
+        """
+            This method retrieves the ID of the requested item from the URL
+            and returns the corresponding item, if it exists in the database.
+            If the item does not exist, a 404 response is returned.
+        """
         item_id = self.kwargs.get("id")
         return get_object_or_404(Item, id=item_id)
+
+    def form_valid(self, request, *args, **kwargs):
+        """
+            This method helps prevent server errors if a user navigates directly
+            to an item URL to delete the item, and raises a 403 code instead.
+        """
+        item = self.get_object()
+        if item.in_valid_delete_state():
+            return super(ItemDeleteView, self).form_valid(request, *args, **kwargs)
+        else:
+            return HttpResponseForbidden("You cannot delete this item. Validate whether it is on shipments, and try again")
+
 
 '''
     Company Views
 
 '''
 
-
 class CompanyCreateView(CreateView):
+    """
+        The following class is used to allow users to create companies
+        within Logitrack.
+    """
     model = Company
     template_name='inventory/companies/company_create.html'
     form_class=CompanyCreateForm
@@ -112,8 +160,8 @@ class CompanyCreateView(CreateView):
 
 class CompanyDetailView(DetailView):
     """
-        The following class is used to display information about a single company.
-
+        The following class displays information for a single company within
+        Logitrack.
     """
 
     template_name = 'inventory/companies/company_detail.html'
@@ -271,16 +319,13 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object(queryset=Shipment.objects.all())
-        #print(self.get_form())
         return super().post(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
         return ShipmentItemFormset(**self.get_form_kwargs(), instance=self.object)
 
     def form_valid(self, form):
-        #print('form_valid')
         form.save()
-
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
