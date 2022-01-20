@@ -68,7 +68,7 @@ With everything installed, clone the repository to download a copy to the curren
 git clone git@github.com:ChristopherRoy1/logitrack.git
 ```
 
-Next, create & activate a virtual environment. If you have virtualenvwrapper installed, you can execute the following command to create & activate a virtual environment:
+Next, create & activate a virtual environment. If you have virtualenvwrapper installed, you can execute the following command to create & activate a virtual environment, but Python virtual environment tools like venv should work fine as well. :
 
 ```shell
 mkvirtualenv logitrack_env
