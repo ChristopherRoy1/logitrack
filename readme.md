@@ -13,6 +13,20 @@ Logitrack is implemented in Django and developed on an Ubuntu machine.
 
 The interface leverages Django's built-in templating system and the database is sqllite3.
 
+## Django project structure
+
+In case the reader is not familiar with Django & the role that each files play,
+I've included a short description below of the more important files:
+
+- `logitrack\urls.py` and `inventory\urls.py`: Files used to map urls to the views that should handle them
+- `inventory\views.py`: Python functions and classes that receive HTTP requests and prepare HTTP responses
+- `inventory\forms.py`: Python classes that control the forms displayed to the user to prepare form submissions for the server
+- `inventory\models.py`: Python classes that provide an abstraction over the underlying database, allowing for db field definitions & relationships
+- `inventory\tests.py`: A series of Python classes and functions that are used to execute automated tests against the web application
+- `inventory\templates\*`: All files in this directory correspond to template files which contain tags that are interpreted by Django's templating engine and returned as responses to requests made to the server
+
+
+
 ## Build instructions
 These build instructions can followed using a Unix terminal to install Logitrack on your local machine. It's possible that you may need superuser priviledges to install the project's dependencies on your computer.
 
@@ -54,7 +68,7 @@ With everything installed, clone the repository to download a copy to the curren
 git clone git@github.com:ChristopherRoy1/logitrack.git
 ```
 
-Next, create & activate a virtual environment. If you have virtualenvwrapper installed, you can execute the following commands to create & activate a virtual environment:
+Next, create & activate a virtual environment. If you have virtualenvwrapper installed, you can execute the following command to create & activate a virtual environment:
 
 ```shell
 mkvirtualenv logitrack_env
@@ -67,16 +81,16 @@ python3 -m pip install -r requirements.txt
 ```
 
 ## Launching Logitrack for the first time
-To launch for the first time, Logitrack, you'll need to execute some commands
+To launch for the first time, you'll need to execute some extra commands
 first.
 
 While not strictly necessary as all migration files are included in the
-repository, execute the following command to ensure any missing migrations
+repository, execute the following command to ensure any that any missing migrations files
 are generated.
 ```shell
 python3 manage.py makemigrations
 ```
-Once complete, we need to create the database (which is not included in the repository )& update the database schema using the migrations files. This will all be done by the following command
+Once complete, we need to create the database (which is not included in the repository )& update the database schema using the migrations files. This will all be handled by the following command
 
 ```shell
 python3 manage.py migrate
@@ -89,17 +103,6 @@ python3 manage.py migrate
 > python3 manage.py createsuperuser
 >```
 
-
-## Launching Logitrack
-
-With the database generated, we can now launch logitrack! Execute the following command
-
-```shell
-python3 manage.py runserver
-```
-
-The last step is to go to localhost, port 8000 in your browser to start interacting with Logitrack!
-
 ## Tests
 A series of automated tests have been prepared to help keep Logitrack stable
 as features are added.
@@ -108,6 +111,18 @@ To launch the tests, simply run the following command from the project root.
 ```shell
 python3 manage.py test
 ```
+
+## Launching Logitrack
+
+With the database generated, we can now launch Logitrack! Execute the following command
+
+```shell
+python3 manage.py runserver
+```
+
+The last step is to go to localhost, port 8000 in your browser to start interacting with Logitrack!
+
+
 
 ## Quickstart - Interacting with Logitrack
 Logitrack's user interface is still very much a work in progress, and the developer apologizes for the lack of CSS.
