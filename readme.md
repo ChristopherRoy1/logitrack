@@ -152,6 +152,8 @@ While the user interface is functional (and described in more detail in the foll
 - View shipments for a company: http://localhost:8000/company/1/shipments/
 - Create a new shipment (for a company): http://localhost:8000/company/1/shipments/create/
 - Edit a shipment & add items: http://localhost:8000/company/1/shipments/1/items/
+- Ship an outbound shipment: http://localhost:8000/company/1/shipments/1/ship/
+- Receive an inbound shipment: http://localhost:8000/company/1/shipments/1/receive/
 
 Finally, you can access Django's built-in admin pages by navigating to the following URL: http://localhost:8000/admin
 Make sure that you added yourself as a superuser to the application (instructions on how to do so are provided in a section above), otherwise you won't be able to log in.
