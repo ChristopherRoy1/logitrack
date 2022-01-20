@@ -90,14 +90,14 @@ are generated.
 ```shell
 python3 manage.py makemigrations
 ```
-Once complete, we need to create the database (which is not included in the repository )& update the database schema using the migrations files. This will all be handled by the following command
+Once complete, we need to create the database (which is not included in the repository)& update the database schema using the migrations files. This will all be handled by the following command
 
 ```shell
 python3 manage.py migrate
 ```
 
 ### Optional command
-> In order to view Logitrack's admin panel, you'll need to add yourself as a super user. Execute the following command and provide input to the prompts.
+> In order to view Logitrack's admin panel, you'll need to add yourself to the database as a super user. Execute the following command and provide input to the prompts to do so!
 
 >```shell
 > python3 manage.py createsuperuser
@@ -152,6 +152,10 @@ View a company: http://localhost:8000/company/1
 View shipments for a company: http://localhost:8000/company/1/shipments/
 Create a new shipment (for a company): http://localhost:8000/company/1/shipments/create/
 Edit a shipment & add items: http://localhost:8000/company/1/shipments/1/items/
+
+Finally, you can access Django's built-in admin pages by navigating to the following URL: http://localhost:8000/admin
+Make sure that you added yourself as a superuser to the application, otherwise you won't be able to log in.
+
 
 ### Creating a company
 Before you can interact with items, you'll need to create a company that you can associate the items to. You can do so at the following URL:
