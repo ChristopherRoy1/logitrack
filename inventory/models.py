@@ -109,7 +109,7 @@ class Item(models.Model):
             shipment__is_shipped=False,
             shipment__direction='IN',
             is_open=True
-        ).aggregate(Sum('quantity'))
+        ).all().aggregate(Sum('quantity'))
 
         result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
         return result
@@ -124,11 +124,11 @@ class Item(models.Model):
         # Allocated quantity is the sum of the quantities of all of the
         # Shipment items that have not been shipped yet
         query = ShipmentItem.objects.filter(
-            item=self,
+            item_id=self.id,
             shipment__is_shipped=False,
             shipment__direction='OUT',
             is_open=True
-        ).aggregate(Sum('quantity'))
+        ).all().aggregate(Sum('quantity'))
 
         # Check for None before returning the result
         result = query['quantity__sum'] if query['quantity__sum'] is not None else 0
@@ -270,7 +270,7 @@ class Shipment(models.Model):
         if self.direction == 'OUT' and self.is_shipped:
             return 'Shipped'
         elif self.direction == 'OUT' and not self.is_shipped:
-            return 'Pending'
+            return 'Pending Shipping'
         elif self.direction == 'IN' and self.is_shipped:
             return 'Received'
         elif self.direction == 'IN' and not self.is_shipped:
@@ -294,7 +294,7 @@ class Shipment(models.Model):
             method in order to update some non mandatory fields that may not be
             present on some forms.
         """
-        super().clean(*args, **kwargs)
+        super(Shipment, self).clean(*args, **kwargs)
         # In the event that the shipment is flagged as shipped
         # and no date_shipped value is provided, default the date_shipped to be
         # the current time
@@ -311,7 +311,7 @@ class Shipment(models.Model):
             initiates any updates of inventory quantities for the items. See
             the ShipmentItem model for more details.
         """
-        super().save(*args, **kwargs)
+        super(Shipment, self).save(*args, **kwargs)
         # Check to see if ShipmentItems haven't been closed yet before updating
         # and triggering an adjustment of inventory.
         if self.is_shipped and self.has_open_shipment_lines():

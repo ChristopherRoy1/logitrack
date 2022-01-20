@@ -171,6 +171,9 @@ class CompanyDetailView(DetailView):
         return get_object_or_404(Company, id=company_id)
 
 class CompanyListView(ListView):
+    """
+        The following class displays a list of companies within Logitrack
+    """
     model = Company
     template_name='inventory/companies/company_list.html'
 
@@ -227,12 +230,6 @@ class ShipmentShipView(UpdateView):
         initial['date_shipped'] = timezone.now()
         return initial
 
-    def form_valid(self, form):
-        shipment = form.save(commit=False)
-
-        is_valid = super().form_valid(form)
-        return is_valid
-
     def get_context_data(self, *args, **kwargs):
         context = super(ShipmentShipView, self).get_context_data(*args, **kwargs)
 
@@ -248,8 +245,9 @@ class ShipmentShipView(UpdateView):
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
 
         shipment = form.save(commit=False)
-        #update things
-        self.is_shipped = True
+
+        # The is_shipped checkbox is not visible on the form
+        shipment.is_shipped = True
 
         return super().form_valid(form)
 
@@ -283,7 +281,7 @@ class ShipmentReceiveView(UpdateView):
         self.company = get_object_or_404(Company, id=self.kwargs['company'])
         shipment = form.save(commit=False)
         #update things
-        self.is_shipped = True
+        shipment.is_shipped = True
         is_valid = super().form_valid(form)
         return is_valid
 
@@ -329,4 +327,4 @@ class ShipmentEditItemView(SingleObjectMixin, FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        return '/'
+        return '.'

@@ -197,6 +197,7 @@ class ItemTestCase(TestCase):
 
 class ItemClassMethodTestCase(TestCase):
     def setUp(self):
+        self.company1 = Company.objects.create(name="The Test Company")
         self.item1 = Item.objects.create(
             sku="BLU-SHRT-LG",
             company=self.company1,
@@ -209,9 +210,125 @@ class ItemClassMethodTestCase(TestCase):
             dimension_z_value=3
         )
 
-    def test_can_have_shipping_disabled(self):
+    def test_method_can_have_shipping_disabled(self):
         # The item is not on any shipments, so it should be able to be disabled
-        assertTrue(self.item1.can_have_shipping_disabled())
+        self.assertTrue(self.item1.can_have_shipping_disabled())
+
+        shipment = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        self.item1.is_shippable = True
+
+        shipment_item = ShipmentItem.objects.create(
+            shipment = shipment,
+            item=self.item1,
+            quantity=10
+        )
+
+
+        self.assertFalse(self.item1.can_have_shipping_disabled())
+
+    def test_method_is_on_shipments(self):
+        """
+            The following test validates the behavior of the
+            Item model's is_on_shipments method
+        """
+        self.assertFalse(self.item1.is_on_shipments())
+
+        shipment = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        self.item1.is_shippable = True
+
+        shipment_item = ShipmentItem.objects.create(
+            shipment = shipment,
+            item=self.item1,
+            quantity=10
+        )
+
+
+        self.assertTrue(self.item1.is_on_shipments())
+
+    def test_method_in_valid_delete_state(self):
+        """
+            The following test validates the in_valid_delete_state method
+            behavior of the Item model.
+        """
+        self.assertFalse(self.item1.is_on_shipments())
+        self.assertTrue(self.item1.in_valid_delete_state())
+
+        shipment = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+        self.item1.is_shippable = True
+
+        shipment_item = ShipmentItem.objects.create(
+            shipment = shipment,
+            item=self.item1,
+            quantity=10
+        )
+
+        self.assertTrue(self.item1.is_on_shipments())
+        self.assertFalse(self.item1.in_valid_delete_state())
+
+
+
+
+class ItemClassQuantityMethodTestCase(TestCase):
+    def setUp(self):
+        self.company1 = Company.objects.create(name="The Test Company")
+        self.item1 = Item.objects.create(
+            sku="BLU-SHRT-LG",
+            company=self.company1,
+            product_name="Blue Shirt (Large) Duplicate",
+            quantity_available=100,
+            is_shippable=True,
+            weight_value=10,
+            weight_unit='kg',
+            dimension_x_value=1,
+            dimension_y_value=2,
+            dimension_z_value=3
+        )
+        self.shipment1 = Shipment.objects.create(
+            company = self.company1,
+            to_address = "Test address 1234",
+            date_promised=timezone.now(),
+            is_shipped=False,
+            direction='OUT'
+        )
+
+
+    def test_method_quantity_allocated(self):
+        """
+            The following test validates the quantity_allocated method behavior
+            of the Item model.
+        """
+        self.assertEquals(self.item1.quantity_allocated(), 0)
+        shipment_item = ShipmentItem.objects.create(
+            item=self.item1,
+            shipment=self.shipment1,
+            quantity=2
+        )
+        self.assertEquals(self.item1.quantity_allocated(), 2)
+        self.shipment1.is_shipped=True
+        self.shipment1.save()
+
+        self.assertEquals(self.item1.quantity_allocated(), 0)
 
 
 class ShipmentItemTestCase(TestCase):
