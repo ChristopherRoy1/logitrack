@@ -142,7 +142,7 @@ While the user interface is functional (and described in more detail in the foll
 - View all items: http://localhost:8000/view-all-items/
 - View all companies: http://localhost:8000/view-all-companies/
 
-Assuming an ID of 1 for the company, item, and shipment, these models can be interacted with using the following links:
+**Assuming an ID of 1 for the company, item, and shipment, these models can be interacted with using the following links:
 
 - View an item: http://localhost:8000/item/1
 - Update an item: http://localhost:8000/item/1/edit/
