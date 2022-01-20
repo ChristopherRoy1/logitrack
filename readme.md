@@ -136,22 +136,22 @@ and `inventory\urls.py`
 ### Skipping the user interface:
 While the user interface is functional (and described in more detail in the following sections) you can use the list of urls below to quickly navigate across logitrack's pages.
 
-Create a company: http://localhost:8000/create-company/
-Create an item: http://localhost:8000/create-item/
+- Create a company: http://localhost:8000/create-company/
+- Create an item: http://localhost:8000/create-item/
 
-View all items: http://localhost:8000/view-all-items/
-View all companies: http://localhost:8000/view-all-companies/
+- View all items: http://localhost:8000/view-all-items/
+- View all companies: http://localhost:8000/view-all-companies/
 
 Assuming an ID of 1 for the company, item, and shipment, these models can be interacted with using the following links:
 
-View an item: http://localhost:8000/item/1
-Update an item: http://localhost:8000/item/1/edit/
-Delete an item: http://localhost:8000/item/1/delete/
+- View an item: http://localhost:8000/item/1
+- Update an item: http://localhost:8000/item/1/edit/
+- Delete an item: http://localhost:8000/item/1/delete/
 
-View a company: http://localhost:8000/company/1
-View shipments for a company: http://localhost:8000/company/1/shipments/
-Create a new shipment (for a company): http://localhost:8000/company/1/shipments/create/
-Edit a shipment & add items: http://localhost:8000/company/1/shipments/1/items/
+- View a company: http://localhost:8000/company/1
+- View shipments for a company: http://localhost:8000/company/1/shipments/
+- Create a new shipment (for a company): http://localhost:8000/company/1/shipments/create/
+- Edit a shipment & add items: http://localhost:8000/company/1/shipments/1/items/
 
 Finally, you can access Django's built-in admin pages by navigating to the following URL: http://localhost:8000/admin
 Make sure that you added yourself as a superuser to the application, otherwise you won't be able to log in.
