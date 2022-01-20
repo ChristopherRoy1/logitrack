@@ -154,7 +154,7 @@ While the user interface is functional (and described in more detail in the foll
 - Edit a shipment & add items: http://localhost:8000/company/1/shipments/1/items/
 
 Finally, you can access Django's built-in admin pages by navigating to the following URL: http://localhost:8000/admin
-Make sure that you added yourself as a superuser to the application, otherwise you won't be able to log in.
+Make sure that you added yourself as a superuser to the application (instructions on how to do so are provided in a section above), otherwise you won't be able to log in.
 
 
 ### Creating a company
