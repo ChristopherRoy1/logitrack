@@ -214,4 +214,8 @@ There are many improvements that can be made to Logitrack. Here are a few that c
   - Similarly, there are no tests to validate the behavior of Logitrack's views
 
 - SKU Validation
-   - To improve for the efficiency of pick, pack, and shipping, SKU formatting can be added to the application. This would allow clients of the logistics company to force a SKU format on their items.
+   - To improve for the efficiency of pick, pack, and shipping, a model (or field) to capture supported SKU formatting is planned to be added to the application. This would allow clients of the logistics company to force a SKU format on their items.
+
+- Remove the SECRET_KEY from the `settings.py` file when this application is eventually deployed into production!
+
+- Update the Shipment & ShipmentItem models to allow for a single shipment to contain items belonging to different companies
